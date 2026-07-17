@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from models import Product
-from database import session
-import database_models
-from database import engine
+from app.models import Product
+from app.database import session
+import app.database_models as database_models
+from app.database import engine
 
 app  = FastAPI()
 
