@@ -1,5 +1,20 @@
+import { useEffect, useState } from "react";
+import { getProducts } from "./apis/apis";
+
 function App() {
-  return <div className="p-10 m-12 text-red-400">BrainVault</div>;
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    getProducts().then(setProducts);
+  }, []);
+
+  return (
+    <>
+      {products.map((p) => (
+        <p key={p.id}>{p.name}</p>
+      ))}
+    </>
+  );
 }
 
 export default App;
