@@ -43,7 +43,6 @@ products = [
 
 def get_db():
     db = session()
-    yield db
     try:
         yield db
     finally:

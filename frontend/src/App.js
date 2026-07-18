@@ -1,19 +1,10 @@
-import { useEffect, useState } from "react";
-import { getProducts } from "./apis/apis";
+import Body from "./components/Body";
 
 function App() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    getProducts().then(setProducts);
-  }, []);
-
   return (
-    <>
-      {products.map((p) => (
-        <p key={p.id}>{p.name}</p>
-      ))}
-    </>
+    <div>
+      <Body />
+    </div>
   );
 }
 
