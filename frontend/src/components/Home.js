@@ -1,7 +1,7 @@
 import Header from "./Header";
 import background from "../assests/images/bg.png";
 import SideNav from "./SideNav";
-import FileDisplay from "./FileDisplay";
+import FileDisplay from "./fileDisplay/FileDisplay";
 
 const Home = () => {
   return (
