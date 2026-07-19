@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import close from "../../assests/icons/cross-circle.svg";
 
 const Modal = ({ heading, setIsModalOpen }) => {
