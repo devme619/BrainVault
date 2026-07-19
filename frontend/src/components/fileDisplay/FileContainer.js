@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 
-const FileDisplay = () => {
+const FileContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const handleOnClick = () => {
     setIsModalOpen(true);
@@ -20,4 +20,4 @@ const FileDisplay = () => {
   );
 };
 
-export default FileDisplay;
+export default FileContainer;

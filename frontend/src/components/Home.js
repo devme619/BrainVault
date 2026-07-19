@@ -1,7 +1,7 @@
 import Header from "./Header";
 import background from "../assests/images/bg.png";
 import SideNav from "./SideNav";
-import FileDisplay from "./fileDisplay/FileDisplay";
+import FileContainer from "./fileDisplay/FileContainer";
 
 const Home = () => {
   return (
@@ -14,7 +14,7 @@ const Home = () => {
       />
       <div className="fixed flex w-full h-full">
         <SideNav />
-        <FileDisplay />
+        <FileContainer />
       </div>
     </div>
   );

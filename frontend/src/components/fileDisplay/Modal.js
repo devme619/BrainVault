@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import close from "../../assests/icons/cross-circle.svg";
+import FileUploader from "../reusableComponents/FileUploader";
 
 const Modal = ({ heading, setIsModalOpen }) => {
   const topic = useRef(null);
@@ -33,7 +34,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
             onClick={closeModal}
           />
         </div>
-        <div className="grid w-full">
+        <div className="w-full grid">
           <input
             type="text"
             placeholder="Topic of the note"
@@ -46,6 +47,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
             ref={description}
             className="m-4 p-2 rounded-lg text-black"
           />
+          <FileUploader isMulti={true} />
           <button
             onClick={handleOnClick}
             className="w-fit mx-auto my-4 px-2 py-1 rounded-lg bg-white text-black"
