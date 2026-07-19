@@ -4,7 +4,7 @@ import avatar_boy from "../assests/icons/avatar_boy.svg";
 
 const Header = () => {
   return (
-    <div className="flex justify-between h-20 text-white">
+    <div className="relative flex justify-between h-20 text-white">
       <div>
         <img alt="Logo" src={Logo} className="w-32 h-auto" />
       </div>
