@@ -1,8 +1,12 @@
 from pydantic import BaseModel
 
-class Product(BaseModel):
-    id: int
+class NoteCreate(BaseModel):
     name: str
     description: str
-    price: float
-    quantity: int
+
+class NoteResponse(NoteCreate):
+    id: int
+
+    model_config = {
+        "from_attributes": True
+    }

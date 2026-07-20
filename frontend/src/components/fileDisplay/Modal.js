@@ -10,12 +10,30 @@ const Modal = ({ heading, setIsModalOpen }) => {
     setIsModalOpen(false);
   };
 
-  const handleOnClick = (e) => {
+  const handleOnClick = async (e) => {
     e.preventDefault();
-    console.log({
-      topic: topic.current.value,
-      description: description.current.value,
-    });
+
+    try {
+      const response = await fetch("http://localhost:8000/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: topic.current.value,
+          description: description.current.value,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create note");
+      }
+
+      const data = await response.json();
+      console.log("Created:", data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (

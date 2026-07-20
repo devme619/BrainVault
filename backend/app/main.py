@@ -1,22 +1,19 @@
-from fastapi import Depends,FastAPI
-from app.models import Product
-from app.database import session
-import app.database_models as database_models
-from app.database import engine
+from typing import List
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine, session
+import app.database_models as database_models
+from app.models import NoteCreate, NoteResponse
 
+app = FastAPI()
 
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
 ]
-
-
-
-app  = FastAPI()
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,20 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-database_models.Base.metadata.create_all(bind =engine)
+database_models.Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
-
 def greet():
-    return "Welcome to BrainVault"
+    return {"message": "Welcome to BrainVault"}
 
-products = [
-    Product(id= 1, name= "phone", description= "budget phone",price=  99,quantity=  10),
-    Product(id= 2, name= "laptop", description= "gaming laptop",price=  999,quantity=  6),
-    Product(id= 3, name= "watch", description= "smart watch",price=  200,quantity=  16),
-
-]
 
 def get_db():
     db = session()
@@ -48,55 +38,97 @@ def get_db():
     finally:
         db.close()
 
-def init_db():
-    db = session()
 
-    count = db.query(database_models.Product).count
-    if count==0:
-        for product in products:
-            db.add(database_models.Product(**product.model_dump()))
+# Seed initial data
+# def init_db():
+#     db = session()
+#     try:
+#         if db.query(database_models.Notes).count() == 0:
+#             notes = [
+#                 database_models.Notes(
+#                     name="Polity",
+#                     description="Prelims + Mains"
+#                 ),
+#                 database_models.Notes(
+#                     name="Economics",
+#                     description="Prelims + Mains"
+#                 ),
+#                 database_models.Notes(
+#                     name="History",
+#                     description="Only Prelims"
+#                 ),
+#             ]
+
+#             db.add_all(notes)
+#             db.commit()
+#     finally:
+#         db.close()
+
+
+# init_db()
+
+
+@app.get("/notes")
+def get_all_notes(db: Session = Depends(get_db)):
+    notes = db.query(database_models.Notes).all()
+
+    if not notes:
+        return {"message": "No notes found"}
+
+    return notes
+
+
+@app.get("/notes/{id}", response_model=NoteResponse)
+def get_note_by_id(id: int, db: Session = Depends(get_db)):
+    note = db.query(database_models.Notes).filter(
+        database_models.Notes.id == id
+    ).first()
+
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    return note
+
+
+@app.post("/notes", response_model=NoteResponse, status_code=201)
+def add_note(note: NoteCreate, db: Session = Depends(get_db)):
+    new_note = database_models.Notes(**note.model_dump())
+
+    db.add(new_note)
+    db.commit()
+    db.refresh(new_note)
+
+    return new_note
+
+
+@app.put("/notes/{id}", response_model=NoteResponse)
+def update_note(id: int, note: NoteCreate, db: Session = Depends(get_db)):
+    db_note = db.query(database_models.Notes).filter(
+        database_models.Notes.id == id
+    ).first()
+
+    if not db_note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    db_note.name = note.name
+    db_note.description = note.description
 
     db.commit()
+    db.refresh(db_note)
 
-init_db()
+    return db_note
 
-@app.get("/products")
-def get_all_products(db: Session = Depends(get_db)):
-    db_products = db.query(database_models.Product).all()
-    return db_products
 
-@app.get("/product/{id}")
-def get_product_by_id(id:int, db:Session=Depends(get_db)):
-    db_product = db.query(database_models.Product).filter(database_models.Product.id==id).first()
-    if db_product:
-            return db_product
-    return "Product not found"
+@app.delete("/notes/{id}")
+def delete_note(id: int, db: Session = Depends(get_db)):
+    db_note = db.query(database_models.Notes).filter(
+        database_models.Notes.id == id
+    ).first()
 
-@app.post("/product")
-def add_product(product: Product,  db:Session=Depends(get_db)):
-    db.add(database_models.Product(**product.model_dump()))
+    if not db_note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    db.delete(db_note)
     db.commit()
-    return product
 
-@app.put("/product")
-def update_product(id:int, product:Product, db:Session=Depends(get_db)):
-    db_product = db.query(database_models.Product).filter(database_models.Product.id==id).first()
-    if db_product:
-        db_product.name = product.name
-        db_product.description = product.description
-        db_product.price = product.price
-        db_product.quantity = product.quantity
-        db.commit()
-        return "Product Updated"
-    else:    
-        return "No product found"
-
-@app.delete("/product")
-def delete_product(id:int,db:Session=Depends(get_db)):
-    db_product = db.query(database_models.Product).filter(database_models.Product.id==id).first()
-    if db_product:
-        db.delete(db_product)
-        db.commit()
-        return "Deleted Successfully"
-    else:
-        return "Product not found"
+    return {"message": "Deleted Successfully"}
