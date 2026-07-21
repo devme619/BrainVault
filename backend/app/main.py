@@ -1,12 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.database.database import engine
+from app.database import models
+
 from app.routers import notes
 
 app = FastAPI(
     title="BrainVault API"
 )
 
+models.Base.metadata.create_all(bind=engine)
 
 origins = [
     "http://localhost:3000",

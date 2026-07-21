@@ -15,20 +15,23 @@ router = APIRouter(
 def get_notes(
     db: Session = Depends(get_db)
 ):
-
     return db.query(models.Notes).all()
-
-
 
 @router.post("/", response_model=NoteResponse)
 def create_note(
     note: NoteCreate,
     db: Session = Depends(get_db)
 ):
-
-    new_note = models.Notes(
-        **note.model_dump()
+    existing_note = (
+        db.query(models.Notes)
+        .filter(models.Notes.name == note.name)
+        .first()
     )
+
+    if existing_note:
+        return {"message": "Note already exists"}
+
+    new_note = models.Notes(**note.model_dump())
 
     db.add(new_note)
     db.commit()
