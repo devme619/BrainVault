@@ -1,11 +1,12 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import close from "../../assests/icons/cross-circle.svg";
 import FileUploader from "../reusableComponents/FileUploader";
+import useCreateNote from "../../hooks/useCreateNote";
 
 const Modal = ({ heading, setIsModalOpen }) => {
-  const [error, setError] = useState(null);
   const topic = useRef(null);
   const description = useRef(null);
+  const { addNote, error } = useCreateNote();
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -13,30 +14,14 @@ const Modal = ({ heading, setIsModalOpen }) => {
 
   const handleOnClick = async (e) => {
     e.preventDefault();
-
+    const payload = {
+      name: topic.current.value,
+      description: description.current.value,
+    };
     try {
-      const response = await fetch("http://localhost:8000/notes/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: topic.current.value,
-          description: description.current.value,
-        }),
-      });
-      setError(null);
-      console.log(response);
-      if (!response.ok) {
-        setError("Note already Exists");
-        throw new Error("Failed to create note");
-      }
+      await addNote(payload);
       setIsModalOpen(false);
-      const data = await response.json();
-      console.log("Created:", data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) {}
   };
 
   return (
