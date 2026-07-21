@@ -17,3 +17,20 @@ export async function createNote(payload) {
 
   return data;
 }
+
+export async function getNotes() {
+  const response = await fetch(`${BASE_URL}/notes/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Something went wrong");
+  }
+
+  return data;
+}

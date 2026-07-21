@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import FilesList from "./FilesList";
 
 const FileContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -8,7 +9,7 @@ const FileContainer = () => {
   };
 
   return (
-    <div className="relative w-full h-full bg-white">
+    <div className="relative w-full h-full bg-white overflow-y-scroll hide-scrollbar">
       <h1> Subject Name</h1>
       <div>
         <button onClick={handleOnClick}>Create new Subject</button>
@@ -16,6 +17,7 @@ const FileContainer = () => {
           <Modal heading={"Create new note"} setIsModalOpen={setIsModalOpen} />
         )}
       </div>
+      <FilesList />
     </div>
   );
 };
