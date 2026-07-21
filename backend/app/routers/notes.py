@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.database import models
@@ -29,7 +29,10 @@ def create_note(
     )
 
     if existing_note:
-        return {"message": "Note already exists"}
+        raise HTTPException(
+            status_code=409,
+            detail="Note already exists"
+    )
 
     new_note = models.Notes(**note.model_dump())
 

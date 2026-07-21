@@ -1,8 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import close from "../../assests/icons/cross-circle.svg";
 import FileUploader from "../reusableComponents/FileUploader";
 
 const Modal = ({ heading, setIsModalOpen }) => {
+  const [error, setError] = useState(null);
   const topic = useRef(null);
   const description = useRef(null);
 
@@ -14,7 +15,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8000/notes", {
+      const response = await fetch("http://localhost:8000/notes/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -24,11 +25,13 @@ const Modal = ({ heading, setIsModalOpen }) => {
           description: description.current.value,
         }),
       });
-
+      setError(null);
+      console.log(response);
       if (!response.ok) {
+        setError("Note already Exists");
         throw new Error("Failed to create note");
       }
-
+      setIsModalOpen(false);
       const data = await response.json();
       console.log("Created:", data);
     } catch (err) {
@@ -66,6 +69,8 @@ const Modal = ({ heading, setIsModalOpen }) => {
             className="m-4 p-2 rounded-lg text-black"
           />
           <FileUploader isMulti={true} />
+          <p className="mx-4 text-red-600">{error}</p>
+
           <button
             onClick={handleOnClick}
             className="w-fit mx-auto my-4 px-2 py-1 rounded-lg bg-white text-black"
