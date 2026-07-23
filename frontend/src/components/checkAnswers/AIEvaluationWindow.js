@@ -38,16 +38,19 @@ const AIEvaluationWindow = ({ selectedFile }) => {
 
   return (
     <div className="w-1/2 h-full p-6 flex flex-col gap-4 overflow-y-auto">
-      <h2 className="text-xl font-bold text-slate-100">AI Evaluation</h2>
-      <p className="text-sm text-slate-400">
-        Once an answer sheet is loaded on the left, click evaluate to convert
-        the document to text and view evaluation results.
-      </p>
+      <div>
+        <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <span>🤖</span> AI Evaluation
+        </h2>
+        <p className="text-xs text-slate-400 mt-1">
+          Convert uploaded answer sheet to text and run AI guideline evaluation.
+        </p>
+      </div>
 
       <button
         onClick={handleRunEvaluation}
         disabled={!selectedFile || loading}
-        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-lg font-medium transition text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800/80 disabled:text-slate-600 rounded-xl font-semibold transition text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
       >
         {loading ? (
           <>
@@ -60,57 +63,45 @@ const AIEvaluationWindow = ({ selectedFile }) => {
       </button>
 
       {/* Main evaluation window area */}
-      <div className="flex-1 bg-slate-900/40 rounded-xl border border-slate-800/80 p-4 text-sm text-slate-400 flex flex-col gap-3 overflow-hidden">
+      <div className="flex-1 bg-slate-900/40 backdrop-blur-md rounded-xl border border-slate-800/80 p-4 text-sm text-slate-400 flex flex-col gap-3 overflow-hidden shadow-md">
         {error && (
-          <div className="p-3 bg-red-900/40 border border-red-800 text-red-300 rounded-lg text-xs">
-            {error}
+          <div className="p-3 bg-red-950/60 border border-red-800/80 text-red-300 rounded-lg text-xs font-mono">
+            ⚠️ {error}
           </div>
         )}
 
         {evaluationData ? (
           <div className="flex flex-col h-full gap-3">
-            <div className="flex items-center justify-between bg-slate-900 p-2.5 rounded-lg border border-slate-800 text-xs">
+            <div className="flex items-center justify-between bg-slate-950/70 p-2.5 rounded-lg border border-slate-800/80 text-xs">
               <div className="flex gap-4">
                 <span>
-                  📄{" "}
-                  <strong className="text-slate-200">
-                    {evaluationData.word_count}
-                  </strong>{" "}
-                  words
+                  📄 <strong className="text-slate-200">{evaluationData.word_count}</strong> words
                 </span>
                 <span>
-                  🔤{" "}
-                  <strong className="text-slate-200">
-                    {evaluationData.character_count}
-                  </strong>{" "}
-                  chars
+                  🔤 <strong className="text-slate-200">{evaluationData.character_count}</strong> chars
                 </span>
                 {evaluationData.pages_processed && (
                   <span>
-                    📑{" "}
-                    <strong className="text-slate-200">
-                      {evaluationData.pages_processed}
-                    </strong>{" "}
-                    page(s)
+                    📑 <strong className="text-slate-200">{evaluationData.pages_processed}</strong> page(s)
                   </span>
                 )}
               </div>
               <button
                 onClick={handleCopy}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded transition text-xs"
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition text-xs font-medium border border-slate-700"
               >
                 {copied ? "Copied! ✓" : "Copy Text"}
               </button>
             </div>
 
-            <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-lg p-3 overflow-y-auto font-mono text-xs text-slate-300 whitespace-pre-wrap">
+            <div className="flex-1 bg-slate-950/90 border border-slate-800/90 rounded-lg p-3.5 overflow-y-auto font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
               {evaluationData.extracted_text}
             </div>
           </div>
         ) : (
-          <div className="m-auto text-center text-slate-500 text-xs">
-            Evaluation details and transcribed text output will display here
-            after running evaluation.
+          <div className="m-auto text-center text-slate-500 text-xs flex flex-col items-center gap-2">
+            <div className="text-3xl opacity-50">✨</div>
+            <p>Evaluation details and transcribed output will display here.</p>
           </div>
         )}
       </div>
