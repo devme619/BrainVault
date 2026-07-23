@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import FileCard from "../reusableComponents/FileCard";
 import { getNotes } from "../../apis/notesAPI";
+import { useDispatch, useSelector } from "react-redux";
+import { setNotes } from "../../utils/store/notesSlice";
 
 const FilesList = () => {
-  const [notesList, setNotesList] = useState(null);
+  const dispatch = useDispatch();
+  const notesList = useSelector((store) => store.notes);
 
   useEffect(() => {
     const fetchNotes = async () => {
       const data = await getNotes();
-      setNotesList(data);
+      dispatch(setNotes(data));
     };
     fetchNotes();
   }, []);
