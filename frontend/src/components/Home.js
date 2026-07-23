@@ -1,7 +1,9 @@
 import Header from "./Header";
 import background from "../assests/images/bg.png";
-import SideNav from "./SideNav";
 import FileContainer from "./fileDisplay/FileContainer";
+import SideNav from "./sidenav/SideNav";
+import CheckAnswersContainer from "./checkAnswers/CheckAnswersContainer";
+import { Outlet } from "react-router-dom";
 
 const Home = () => {
   return (
@@ -14,7 +16,9 @@ const Home = () => {
       />
       <div className="fixed flex w-full h-full">
         <SideNav />
-        <FileContainer />
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
