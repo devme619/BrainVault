@@ -17,9 +17,16 @@ const FilesList = () => {
   }, []);
 
   return (
-    <div className="flex flex-wrap mb-20">
-      {notesList?.map(({ id, name, description }) => (
-        <FileCard key={id} name={name} description={description} />
+    <div className="flex flex-wrap mb-20 p-4">
+      {notesList?.map((note, index) => (
+        <FileCard
+          key={note.id || index}
+          name={note.name}
+          description={note.description}
+          fileUrl={note.fileUrl}
+          fileType={note.fileType}
+          fileName={note.fileName}
+        />
       ))}
     </div>
   );

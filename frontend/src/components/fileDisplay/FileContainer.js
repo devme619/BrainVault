@@ -10,7 +10,7 @@ const FileContainer = () => {
 
   return (
     <div className="relative w-full h-full overflow-y-scroll hide-scrollbar">
-      <div className="sticky top-0 bg-slate-900">
+      <div className="sticky top-0 z-100 bg-slate-900">
         <h1 className=" flex justify-center  text-white font-bold text-lg">
           {" "}
           Subject Name
@@ -27,7 +27,6 @@ const FileContainer = () => {
       {isModalOpen && (
         <Modal heading={"Create new note"} setIsModalOpen={setIsModalOpen} />
       )}
-
       <FilesList />
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import FileUploader from "../reusableComponents/FileUploader";
+import FilePreview from "../reusableComponents/FilePreview";
 import AIEvaluationWindow from "./AIEvaluationWindow";
 
 const CheckAnswersContainer = () => {
@@ -38,31 +39,12 @@ const CheckAnswersContainer = () => {
           />
         </div>
         <div className="flex-1 w-full bg-slate-900/50 rounded-xl border border-slate-800 overflow-y-auto p-2 flex items-center justify-center">
-          {selectedFile ? (
-            selectedFile.type === "application/pdf" ? (
-              <iframe
-                src={selectedFile.url}
-                title="PDF Preview"
-                className="w-full h-full rounded-lg border-0 bg-white"
-              />
-            ) : (
-              <div className="w-full h-full overflow-y-auto flex justify-center bg-black">
-                <img
-                  src={selectedFile.url}
-                  alt={selectedFile.name}
-                  className="max-w-full h-auto object-contain rounded-lg"
-                />
-              </div>
-            )
-          ) : (
-            <div className="text-center p-6 text-slate-500">
-              <div className="text-4xl mb-2">📄</div>
-              <p className="text-sm">No answer sheet uploaded yet</p>
-              <p className="text-xs text-slate-600 mt-1">
-                Upload a JPG, PNG, or PDF file to view
-              </p>
-            </div>
-          )}
+          <FilePreview
+            fileUrl={selectedFile?.url}
+            fileType={selectedFile?.type}
+            fileName={selectedFile?.name}
+            className="w-full h-full"
+          />
         </div>
       </div>
       <AIEvaluationWindow selectedFile={selectedFile} />
