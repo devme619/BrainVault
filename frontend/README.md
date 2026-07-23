@@ -1,3 +1,21 @@
+# Frontend — React App
+
+This is the React frontend for the BrainVault project (Create React App + Tailwind).
+
+## Run locally
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The development server runs on port 3000 by default. The backend API is expected at `http://localhost:8000`.
+
+## Scripts
+- `npm start` — start development server
+- `npm test` — run tests
+- `npm run build` — build production bundle
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

@@ -5,6 +5,7 @@ from app.database.database import engine
 from app.database import models
 
 from app.routers import notes
+from app.routers import evaluation
 
 app = FastAPI(
     title="BrainVault API"
@@ -28,6 +29,7 @@ app.add_middleware(
 
 
 app.include_router(notes.router)
+app.include_router(evaluation.router)
 
 
 @app.get("/")
