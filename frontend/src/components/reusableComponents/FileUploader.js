@@ -1,17 +1,34 @@
-import { useRef } from "react";
+const FileUploader = ({
+  onFileSelect,
+  isMulti = false,
+  accept = "image/*,application/pdf",
+  buttonText = "Upload File",
+  className = "",
+}) => {
+  const handleChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (isMulti) {
+      onFileSelect(files);
+    } else {
+      onFileSelect(files[0]);
+    }
+    e.target.value = null;
+  };
 
-const FileUploader = ({ isMulti = false }) => {
-  const files = useRef();
   return (
-    <div>
+    <label
+      className={`px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md text-sm font-medium cursor-pointer transition text-white inline-block ${className}`}
+    >
+      {buttonText}
       <input
-        className="m-4 p-2 rounded-lg text-white"
         type="file"
         multiple={isMulti}
-        ref={files}
-        onChange={() => console.log(files)}
+        accept={accept}
+        className="hidden"
+        onChange={handleChange}
       />
-    </div>
+    </label>
   );
 };
 
