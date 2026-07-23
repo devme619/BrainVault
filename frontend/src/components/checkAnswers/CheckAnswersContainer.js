@@ -15,7 +15,7 @@ const CheckAnswersContainer = () => {
       name: file.name,
       size: (file.size / (1024 * 1024)).toFixed(2),
       type: file.type,
-      url: URL.createObjectURL(file),
+      url: URL?.createObjectURL(file),
     });
   };
 
