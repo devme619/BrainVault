@@ -38,17 +38,24 @@ const Modal = ({ heading, setIsModalOpen }) => {
     };
 
     try {
-      // Try posting basic payload to backend note API
-      await addNote({
+      const createdBackendNote = await addNote({
         name: payload.name,
         description: payload.description,
-      }).catch(() => null); // Gracefully handle if backend note API fails
+      }).catch(() => null);
 
-      // Update Redux Store
-      dispatch(addSingleNote(payload));
+      const noteToStore = {
+        id: createdBackendNote?.id || Date.now(),
+        name: payload.name,
+        description: payload.description,
+        fileUrl: payload.fileUrl,
+        fileType: payload.fileType,
+        fileName: payload.fileName,
+      };
+
+      dispatch(addSingleNote(noteToStore));
       setIsModalOpen(false);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to create note:", err);
     }
   };
 
@@ -101,13 +108,16 @@ const Modal = ({ heading, setIsModalOpen }) => {
               } text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500`}
             />
             {validationError && (
-              <p className="text-xs text-red-400 mt-1 font-medium">{validationError}</p>
+              <p className="text-xs text-red-400 mt-1 font-medium">
+                {validationError}
+              </p>
             )}
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Description <span className="text-slate-500 font-normal">(Optional)</span>
+              Description{" "}
+              <span className="text-slate-500 font-normal">(Optional)</span>
             </label>
             <textarea
               placeholder="Summary or key points..."
@@ -119,7 +129,8 @@ const Modal = ({ heading, setIsModalOpen }) => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Attach File <span className="text-slate-500 font-normal">(Optional)</span>
+              Attach File{" "}
+              <span className="text-slate-500 font-normal">(Optional)</span>
             </label>
             <div className="flex items-center gap-3">
               <FileUploader
@@ -146,7 +157,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
             )}
           </div>
 
-          {(apiError) && (
+          {apiError && (
             <p className="text-xs text-red-400 bg-red-950/40 p-2 rounded border border-red-900">
               {apiError}
             </p>

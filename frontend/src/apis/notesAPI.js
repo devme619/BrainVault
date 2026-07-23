@@ -1,36 +1,46 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 export async function createNote(payload) {
-  const response = await fetch(`${BASE_URL}/notes/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(`${BASE_URL}/notes/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.detail || "Something went wrong");
+    if (!response.ok) {
+      throw new Error(data.detail || "Failed to create note");
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error creating note on backend:", err);
+    throw err;
   }
-
-  return data;
 }
 
 export async function getNotes() {
-  const response = await fetch(`${BASE_URL}/notes/`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  try {
+    const response = await fetch(`${BASE_URL}/notes/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-  const data = await response.json();
+    if (!response.ok) {
+      console.warn("Backend notes API returned non-OK status, returning empty list.");
+      return [];
+    }
 
-  if (!response.ok) {
-    throw new Error(data.detail || "Something went wrong");
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.warn("Failed to fetch notes from backend, returning empty array:", err);
+    return [];
   }
-
-  return data;
 }
