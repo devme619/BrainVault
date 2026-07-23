@@ -9,14 +9,25 @@ const FileContainer = () => {
   };
 
   return (
-    <div className="relative w-full h-full bg-white overflow-y-scroll hide-scrollbar">
-      <h1> Subject Name</h1>
-      <div>
-        <button onClick={handleOnClick}>Create new Subject</button>
-        {isModalOpen && (
-          <Modal heading={"Create new note"} setIsModalOpen={setIsModalOpen} />
-        )}
+    <div className="relative w-full h-full overflow-y-scroll hide-scrollbar">
+      <div className="sticky top-0 bg-slate-900">
+        <h1 className=" flex justify-center  text-white font-bold text-lg">
+          {" "}
+          Subject Name
+        </h1>
+        <div className="flex w-full justify-end">
+          <button
+            onClick={handleOnClick}
+            className="flex mx-4 mb-1 p-2 justify-end bg-white text-black font-bold rounded-lg "
+          >
+            Create Note
+          </button>
+        </div>
       </div>
+      {isModalOpen && (
+        <Modal heading={"Create new note"} setIsModalOpen={setIsModalOpen} />
+      )}
+
       <FilesList />
     </div>
   );
