@@ -2,8 +2,11 @@ import { useRef } from "react";
 import close from "../../assests/icons/cross-circle.svg";
 import FileUploader from "../reusableComponents/FileUploader";
 import useCreateNote from "../../hooks/useCreateNote";
+import { useDispatch } from "react-redux";
+import { addSingleNote } from "../../utils/store/notesSlice";
 
 const Modal = ({ heading, setIsModalOpen }) => {
+  const dispatch = useDispatch();
   const topic = useRef(null);
   const description = useRef(null);
   const { addNote, error } = useCreateNote();
@@ -20,6 +23,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
     };
     try {
       await addNote(payload);
+      dispatch(addSingleNote(payload));
       setIsModalOpen(false);
     } catch (err) {}
   };

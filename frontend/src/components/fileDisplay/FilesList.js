@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import FileCard from "../reusableComponents/FileCard";
 import { getNotes } from "../../apis/notesAPI";
 import { useDispatch, useSelector } from "react-redux";
