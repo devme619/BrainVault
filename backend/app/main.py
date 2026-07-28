@@ -6,6 +6,7 @@ from app.database import models
 
 from app.routers import notes
 from app.routers import evaluation
+from app.routers import auth
 
 app = FastAPI(
     title="BrainVault API"
@@ -16,8 +17,8 @@ models.Base.metadata.create_all(bind=engine)
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "*"
 ]
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,13 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 app.include_router(notes.router)
 app.include_router(evaluation.router)
-
+app.include_router(auth.router)
 
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to BrainVault"
+        "message": "Welcome to BrainVault API"
     }
