@@ -4,7 +4,7 @@ import { getNotes } from "../../apis/notesAPI";
 import { useDispatch, useSelector } from "react-redux";
 import { setNotes } from "../../utils/store/notesSlice";
 
-const FilesList = () => {
+const FilesList = ({ onNoteSelect }) => {
   const dispatch = useDispatch();
   const notesList = useSelector((store) => store.notes);
 
@@ -38,12 +38,8 @@ const FilesList = () => {
       {notesList.map((note, index) => (
         <FileCard
           key={note.id || index}
-          name={note.name}
-          description={note.description}
-          fileUrl={note.fileUrl}
-          fileType={note.fileType}
-          fileName={note.fileName}
-          extractedText={note.extractedText}
+          note={note}
+          onCardClick={onNoteSelect}
         />
       ))}
     </div>

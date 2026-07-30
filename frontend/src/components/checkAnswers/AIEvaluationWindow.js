@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setEvaluationData, setActiveTab } from "../../utils/store/checkAnswersSlice";
-import { convertFileToText } from "../../apis/evaluationAPIs";
+import { triggerAIEvaluation, setActiveTab } from "../../utils/store/checkAnswersSlice";
 
 const PROVIDER_MODELS = {
   gemini: [
@@ -21,7 +20,9 @@ const PROVIDER_MODELS = {
 
 const AIEvaluationWindow = ({ selectedFile }) => {
   const dispatch = useDispatch();
-  const { evaluationData, activeTab } = useSelector((store) => store.checkAnswers);
+  const { evaluationData, isEvaluating, evaluationError, activeTab } = useSelector(
+    (store) => store.checkAnswers
+  );
 
   const [provider, setProvider] = useState(localStorage.getItem("bv_ai_provider") || "gemini");
   const [modelName, setModelName] = useState(localStorage.getItem("bv_ai_model") || "gemini-1.5-flash");
@@ -29,7 +30,6 @@ const AIEvaluationWindow = ({ selectedFile }) => {
   const [showKey, setShowKey] = useState(false);
   const [showSettings, setShowSettings] = useState(!localStorage.getItem("bv_ai_key"));
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -56,31 +56,19 @@ const AIEvaluationWindow = ({ selectedFile }) => {
       return;
     }
 
-    setLoading(true);
     setError(null);
 
-    try {
-      const result = await convertFileToText(selectedFile.file, {
-        provider,
-        apiKey,
-        modelName,
-      });
-
-      if (result.evaluation_report?.error) {
-        setError(result.evaluation_report.error);
-      }
-
-      dispatch(setEvaluationData(result));
-      if (result.evaluation_report && !result.evaluation_report.error) {
-        dispatch(setActiveTab("report"));
-      } else {
-        dispatch(setActiveTab("text"));
-      }
-    } catch (err) {
-      setError(err.message || "Failed to process document for AI evaluation");
-    } finally {
-      setLoading(false);
-    }
+    // Dispatch background evaluation in Redux so switching tabs never interrupts execution
+    dispatch(
+      triggerAIEvaluation({
+        file: selectedFile.file,
+        aiOptions: {
+          provider,
+          apiKey,
+          modelName,
+        },
+      })
+    );
   };
 
   const handleCopy = () => {
@@ -92,6 +80,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
   };
 
   const report = evaluationData?.evaluation_report;
+  const activeError = error || evaluationError;
 
   return (
     <div className="w-1/2 h-full p-6 flex flex-col gap-4 overflow-y-auto selection:bg-emerald-500">
@@ -201,13 +190,13 @@ const AIEvaluationWindow = ({ selectedFile }) => {
       {/* Action Button */}
       <button
         onClick={handleRunEvaluation}
-        disabled={!selectedFile || loading}
+        disabled={!selectedFile || isEvaluating}
         className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800/80 disabled:text-slate-600 rounded-xl font-semibold transition text-sm cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
       >
-        {loading ? (
+        {isEvaluating ? (
           <>
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Evaluating with {modelName}...</span>
+            <span>Evaluating with {modelName} in background...</span>
           </>
         ) : (
           <span>Run AI Evaluation ({provider.toUpperCase()})</span>
@@ -216,13 +205,21 @@ const AIEvaluationWindow = ({ selectedFile }) => {
 
       {/* Main Output Display Area */}
       <div className="flex-1 bg-slate-900/40 backdrop-blur-md rounded-xl border border-slate-800/80 p-4 text-sm text-slate-400 flex flex-col gap-3 overflow-hidden shadow-md">
-        {error && (
+        {activeError && (
           <div className="p-3 bg-red-950/60 border border-red-800/80 text-red-300 rounded-lg text-xs font-mono">
-            ⚠️ {error}
+            ⚠️ {activeError}
           </div>
         )}
 
-        {evaluationData ? (
+        {isEvaluating ? (
+          <div className="m-auto text-center text-slate-400 text-xs flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="font-semibold text-slate-200 text-sm">Evaluating Answer Sheet...</p>
+            <p className="text-slate-500 max-w-xs">
+              AI model is analyzing your answer sheet in the background. You can freely switch tabs anytime!
+            </p>
+          </div>
+        ) : evaluationData ? (
           <div className="flex flex-col h-full gap-3 overflow-hidden">
             {/* View Tabs Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
