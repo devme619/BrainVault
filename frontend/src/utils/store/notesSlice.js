@@ -19,9 +19,25 @@ const notesSlice = createSlice({
     clearOpenedNote: (state) => {
       state.openedNote = null;
     },
+    updateNoteContent: (state, action) => {
+      const { id, textContent } = action.payload;
+      if (state.openedNote && state.openedNote.id === id) {
+        state.openedNote.textContent = textContent;
+      }
+      const noteItem = state.list.find((n) => n.id === id);
+      if (noteItem) {
+        noteItem.textContent = textContent;
+      }
+    },
   },
 });
 
-export const { setNotes, addSingleNote, setOpenedNote, clearOpenedNote } = notesSlice.actions;
+export const {
+  setNotes,
+  addSingleNote,
+  setOpenedNote,
+  clearOpenedNote,
+  updateNoteContent,
+} = notesSlice.actions;
 
 export default notesSlice.reducer;

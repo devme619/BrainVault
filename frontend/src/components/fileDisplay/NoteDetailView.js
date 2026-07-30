@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { updateNoteContent } from "../../utils/store/notesSlice";
 import FilePreview from "../reusableComponents/FilePreview";
+import RichTextEditor from "./RichTextEditor";
 import { convertFileToText } from "../../apis/evaluationAPIs";
 
 const NoteDetailView = ({ note, onClose }) => {
+  const dispatch = useDispatch();
   const [extractedText, setExtractedText] = useState(note?.extractedText || "");
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
@@ -64,16 +68,29 @@ const NoteDetailView = ({ note, onClose }) => {
     }
   };
 
+  const handleSaveRichText = (newHtmlContent) => {
+    dispatch(
+      updateNoteContent({
+        id: note.id,
+        textContent: newHtmlContent,
+      })
+    );
+  };
+
+  const hasFile = Boolean(note.fileUrl || note.file);
+
   return (
     <div className="absolute inset-0 z-40 w-full h-full bg-slate-950/95 backdrop-blur-md flex flex-col overflow-hidden animate-fade-in text-white">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between shadow-lg shrink-0">
+      <div className="p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between shadow-lg shrink-0 z-20">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">📖</span>
+          <span className="text-2xl">{hasFile ? "📄" : "📝"}</span>
           <div>
             <h2 className="font-bold text-lg text-slate-100">{note.name}</h2>
-            {note.fileName && (
+            {note.fileName ? (
               <p className="text-xs text-slate-400 font-mono">📎 {note.fileName}</p>
+            ) : (
+              <p className="text-xs text-emerald-400 font-mono">✏️ Interactive Note Document</p>
             )}
           </div>
         </div>
@@ -87,22 +104,31 @@ const NoteDetailView = ({ note, onClose }) => {
         </button>
       </div>
 
-      {/* Content Body spanning full workspace width */}
-      <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto max-w-5xl mx-auto w-full">
-        {/* Note Description */}
-        {note.description ? (
-          <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl shadow-md">
-            <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
-              Description / Summary
-            </h4>
-            <p className="text-sm text-slate-200 leading-relaxed">{note.description}</p>
-          </div>
-        ) : (
-          <p className="text-xs text-slate-500 italic">No description provided for this note.</p>
-        )}
+      {/* RENDER MODE A: Google Docs Rich Text Editor (When NO file is attached) */}
+      {!hasFile ? (
+        <div className="flex-1 w-full h-full overflow-hidden flex flex-col">
+          <RichTextEditor
+            initialContent={note.textContent || (note.description ? `<p>${note.description}</p>` : "<p>Start typing your note here...</p>")}
+            onSave={handleSaveRichText}
+            noteName={note.name}
+          />
+        </div>
+      ) : (
+        /* RENDER MODE B: Document Preview & OCR Text Viewer (When file is attached) */
+        <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto max-w-5xl mx-auto w-full">
+          {/* Note Description */}
+          {note.description ? (
+            <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl shadow-md">
+              <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
+                Description / Summary
+              </h4>
+              <p className="text-sm text-slate-200 leading-relaxed">{note.description}</p>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">No description provided for this note.</p>
+          )}
 
-        {/* Attached File Section */}
-        {note.fileUrl ? (
+          {/* Attached File Section */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -133,42 +159,38 @@ const NoteDetailView = ({ note, onClose }) => {
               />
             </div>
           </div>
-        ) : (
-          <div className="p-8 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl text-center text-slate-500 text-xs">
-            No document file attached to this note.
-          </div>
-        )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="p-3 bg-red-950/60 border border-red-800/80 text-red-300 rounded-xl text-xs font-mono">
-            ⚠️ {error}
-          </div>
-        )}
+          {/* Error Message */}
+          {error && (
+            <div className="p-3 bg-red-950/60 border border-red-800/80 text-red-300 rounded-xl text-xs font-mono">
+              ⚠️ {error}
+            </div>
+          )}
 
-        {/* Extracted OCR Text Container */}
-        {extractedText && (
-          <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-col gap-3 shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-bold text-emerald-400">✓ Extracted Transcribed Text</span>
-                {wordCount > 0 && <span className="text-slate-400 font-mono">{wordCount} words</span>}
-                {charCount > 0 && <span className="text-slate-500 font-mono">{charCount} chars</span>}
+          {/* Extracted OCR Text Container */}
+          {extractedText && (
+            <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-col gap-3 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="font-bold text-emerald-400">✓ Extracted Transcribed Text</span>
+                  {wordCount > 0 && <span className="text-slate-400 font-mono">{wordCount} words</span>}
+                  {charCount > 0 && <span className="text-slate-500 font-mono">{charCount} chars</span>}
+                </div>
+                <button
+                  onClick={handleCopy}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 cursor-pointer"
+                >
+                  {copied ? "Copied! ✓" : "Copy Text"}
+                </button>
               </div>
-              <button
-                onClick={handleCopy}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 cursor-pointer"
-              >
-                {copied ? "Copied! ✓" : "Copy Text"}
-              </button>
-            </div>
 
-            <div className="max-h-72 overflow-y-auto font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800/60">
-              {extractedText}
+              <div className="max-h-72 overflow-y-auto font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed bg-slate-950 p-4 rounded-lg border border-slate-800/60">
+                {extractedText}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
