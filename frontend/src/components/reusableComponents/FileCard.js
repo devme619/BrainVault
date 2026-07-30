@@ -1,12 +1,26 @@
+import { useState } from "react";
 import FilePreview from "./FilePreview";
 
-const FileCard = ({ name, description, fileUrl, fileType, fileName }) => {
+const FileCard = ({ name, description, fileUrl, fileType, fileName, extractedText }) => {
+  const [showOcrText, setShowOcrText] = useState(false);
+
   return (
-    <div className="w-60 h-80 m-4 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition shadow-lg group">
-      <div className="flex flex-col gap-1.5 shrink-0">
-        <h3 className="font-semibold text-slate-100 text-base truncate group-hover:text-emerald-400 transition" title={name}>
-          {name}
-        </h3>
+    <div className="w-64 h-84 m-4 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700/80 transition shadow-xl group relative">
+      <div className="flex flex-col gap-1 shrink-0">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-slate-100 text-base truncate group-hover:text-emerald-400 transition" title={name}>
+            {name}
+          </h3>
+          {extractedText && (
+            <span
+              onClick={() => setShowOcrText(!showOcrText)}
+              className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded cursor-pointer hover:bg-emerald-900 transition"
+              title="View OCR Transcribed Text"
+            >
+              {showOcrText ? "Image" : "OCR Text"}
+            </span>
+          )}
+        </div>
         {description ? (
           <p className="text-xs text-slate-400 line-clamp-2" title={description}>
             {description}
@@ -16,14 +30,20 @@ const FileCard = ({ name, description, fileUrl, fileType, fileName }) => {
         )}
       </div>
 
-      <div className="flex-1 my-3 relative overflow-hidden rounded-lg">
-        <FilePreview
-          fileUrl={fileUrl}
-          fileType={fileType}
-          fileName={fileName}
-          className="w-full h-full"
-          showFileName={false}
-        />
+      <div className="flex-1 my-2.5 relative overflow-hidden rounded-lg">
+        {showOcrText && extractedText ? (
+          <div className="w-full h-full bg-slate-950/90 border border-slate-800 p-2.5 overflow-y-auto font-mono text-[11px] text-slate-300 whitespace-pre-wrap leading-tight">
+            {extractedText}
+          </div>
+        ) : (
+          <FilePreview
+            fileUrl={fileUrl}
+            fileType={fileType}
+            fileName={fileName}
+            className="w-full h-full"
+            showFileName={false}
+          />
+        )}
       </div>
 
       {fileName && (

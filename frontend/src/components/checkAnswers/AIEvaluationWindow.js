@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setEvaluationData, setActiveTab } from "../../utils/store/checkAnswersSlice";
 import { convertFileToText } from "../../apis/evaluationAPIs";
 
 const PROVIDER_MODELS = {
@@ -18,15 +20,16 @@ const PROVIDER_MODELS = {
 };
 
 const AIEvaluationWindow = ({ selectedFile }) => {
+  const dispatch = useDispatch();
+  const { evaluationData, activeTab } = useSelector((store) => store.checkAnswers);
+
   const [provider, setProvider] = useState(localStorage.getItem("bv_ai_provider") || "gemini");
   const [modelName, setModelName] = useState(localStorage.getItem("bv_ai_model") || "gemini-1.5-flash");
   const [apiKey, setApiKey] = useState(localStorage.getItem("bv_ai_key") || "");
   const [showKey, setShowKey] = useState(false);
   const [showSettings, setShowSettings] = useState(!localStorage.getItem("bv_ai_key"));
 
-  const [activeTab, setActiveTab] = useState("report");
   const [loading, setLoading] = useState(false);
-  const [evaluationData, setEvaluationData] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -43,12 +46,6 @@ const AIEvaluationWindow = ({ selectedFile }) => {
     setProvider(p);
     setModelName(PROVIDER_MODELS[p][0].id);
   };
-
-  // Clear output when a new file is uploaded
-  useEffect(() => {
-    setEvaluationData(null);
-    setError(null);
-  }, [selectedFile]);
 
   const handleRunEvaluation = async () => {
     if (!selectedFile?.file) return;
@@ -73,11 +70,11 @@ const AIEvaluationWindow = ({ selectedFile }) => {
         setError(result.evaluation_report.error);
       }
 
-      setEvaluationData(result);
+      dispatch(setEvaluationData(result));
       if (result.evaluation_report && !result.evaluation_report.error) {
-        setActiveTab("report");
+        dispatch(setActiveTab("report"));
       } else {
-        setActiveTab("text");
+        dispatch(setActiveTab("text"));
       }
     } catch (err) {
       setError(err.message || "Failed to process document for AI evaluation");
@@ -231,7 +228,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <div className="flex gap-2">
                 <button
-                  onClick={() => setActiveTab("report")}
+                  onClick={() => dispatch(setActiveTab("report"))}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                     activeTab === "report"
                       ? "bg-emerald-600 text-white shadow"
@@ -241,7 +238,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
                   📊 AI Evaluation Report
                 </button>
                 <button
-                  onClick={() => setActiveTab("text")}
+                  onClick={() => dispatch(setActiveTab("text"))}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                     activeTab === "text"
                       ? "bg-emerald-600 text-white shadow"

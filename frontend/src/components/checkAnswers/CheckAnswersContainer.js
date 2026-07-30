@@ -1,23 +1,27 @@
-import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setSelectedFile } from "../../utils/store/checkAnswersSlice";
 import FileUploader from "../reusableComponents/FileUploader";
 import FilePreview from "../reusableComponents/FilePreview";
 import AIEvaluationWindow from "./AIEvaluationWindow";
 
 const CheckAnswersContainer = () => {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const dispatch = useDispatch();
+  const selectedFile = useSelector((store) => store.checkAnswers.selectedFile);
 
   const handleFileUpload = (file) => {
     if (!file) return;
     if (selectedFile?.url) {
       URL.revokeObjectURL(selectedFile.url);
     }
-    setSelectedFile({
-      file,
-      name: file.name,
-      size: (file.size / (1024 * 1024)).toFixed(2),
-      type: file.type,
-      url: URL?.createObjectURL(file),
-    });
+    dispatch(
+      setSelectedFile({
+        file,
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2),
+        type: file.type,
+        url: URL?.createObjectURL(file),
+      })
+    );
   };
 
   return (

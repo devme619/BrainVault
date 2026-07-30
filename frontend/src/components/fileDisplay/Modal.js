@@ -3,12 +3,16 @@ import close from "../../assests/icons/cross-circle.svg";
 import FileUploader from "../reusableComponents/FileUploader";
 import FilePreview from "../reusableComponents/FilePreview";
 import useCreateNote from "../../hooks/useCreateNote";
+import { convertFileToText } from "../../apis/evaluationAPIs";
 import { useDispatch } from "react-redux";
 import { addSingleNote } from "../../utils/store/notesSlice";
 
 const Modal = ({ heading, setIsModalOpen }) => {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [extractedText, setExtractedText] = useState("");
+  const [isExtractingOcr, setIsExtractingOcr] = useState(false);
   const [validationError, setValidationError] = useState("");
+
   const dispatch = useDispatch();
   const topic = useRef(null);
   const description = useRef(null);
@@ -35,6 +39,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
       fileUrl: selectedFile?.url || null,
       fileType: selectedFile?.type || null,
       fileName: selectedFile?.name || null,
+      extractedText: extractedText || null,
     };
 
     try {
@@ -50,6 +55,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
         fileUrl: payload.fileUrl,
         fileType: payload.fileType,
         fileName: payload.fileName,
+        extractedText: payload.extractedText,
       };
 
       dispatch(addSingleNote(noteToStore));
@@ -59,11 +65,12 @@ const Modal = ({ heading, setIsModalOpen }) => {
     }
   };
 
-  const handleFileUpload = (file) => {
+  const handleFileUpload = async (file) => {
     if (!file) return;
     if (selectedFile?.url) {
       URL.revokeObjectURL(selectedFile.url);
     }
+    
     setSelectedFile({
       file,
       name: file.name,
@@ -71,6 +78,20 @@ const Modal = ({ heading, setIsModalOpen }) => {
       type: file.type,
       url: URL.createObjectURL(file),
     });
+
+    // Run OCR text extraction on attached note file
+    setIsExtractingOcr(true);
+    setExtractedText("");
+    try {
+      const result = await convertFileToText(file);
+      if (result.extracted_text) {
+        setExtractedText(result.extracted_text);
+      }
+    } catch (err) {
+      console.warn("OCR extraction skipped:", err);
+    } finally {
+      setIsExtractingOcr(false);
+    }
   };
 
   return (
@@ -129,7 +150,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Attach File{" "}
+              Attach File & Auto-Extract Text{" "}
               <span className="text-slate-500 font-normal">(Optional)</span>
             </label>
             <div className="flex items-center gap-3">
@@ -139,9 +160,20 @@ const Modal = ({ heading, setIsModalOpen }) => {
                 className="shrink-0"
               />
               {selectedFile && (
-                <span className="text-xs text-slate-400 truncate">
-                  📄 {selectedFile.name} ({selectedFile.size} MB)
-                </span>
+                <div className="flex flex-col truncate">
+                  <span className="text-xs text-slate-300 truncate font-mono">
+                    📄 {selectedFile.name} ({selectedFile.size} MB)
+                  </span>
+                  {isExtractingOcr ? (
+                    <span className="text-[10px] text-amber-400 flex items-center gap-1 animate-pulse">
+                      <span>⚡</span> Extracting text (OCR)...
+                    </span>
+                  ) : extractedText ? (
+                    <span className="text-[10px] text-emerald-400 font-medium">
+                      ✓ OCR Text Extracted
+                    </span>
+                  ) : null}
+                </div>
               )}
             </div>
 
@@ -173,7 +205,8 @@ const Modal = ({ heading, setIsModalOpen }) => {
             </button>
             <button
               onClick={handleOnClick}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-lg transition shadow-md"
+              disabled={isExtractingOcr}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-medium text-xs rounded-lg transition shadow-md cursor-pointer"
             >
               Upload Note
             </button>

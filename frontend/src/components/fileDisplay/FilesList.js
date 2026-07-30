@@ -43,6 +43,7 @@ const FilesList = () => {
           fileUrl={note.fileUrl}
           fileType={note.fileType}
           fileName={note.fileName}
+          extractedText={note.extractedText}
         />
       ))}
     </div>
