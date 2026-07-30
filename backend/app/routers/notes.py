@@ -29,7 +29,6 @@ def create_note(
     note: NoteCreate,
     db: Session = Depends(get_db)
 ):
-    # Ensure database table exists before querying
     try:
         models.Base.metadata.create_all(bind=engine)
     except Exception:
