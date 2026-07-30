@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setOpenedNote, clearOpenedNote } from "../../utils/store/notesSlice";
 import Modal from "./Modal";
 import FilesList from "./FilesList";
 import NoteDetailView from "./NoteDetailView";
 
 const FileContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedNote, setSelectedNote] = useState(null);
+  const dispatch = useDispatch();
+  const openedNote = useSelector((store) => store.notes.openedNote);
 
   const handleOnClick = () => {
     setIsModalOpen(true);
@@ -37,14 +40,14 @@ const FileContainer = () => {
 
       {/* Scrollable File Cards List */}
       <div className="p-2">
-        <FilesList onNoteSelect={(note) => setSelectedNote(note)} />
+        <FilesList onNoteSelect={(note) => dispatch(setOpenedNote(note))} />
       </div>
 
-      {/* Right Side Note Detail Reader View Panel */}
-      {selectedNote && (
+      {/* Full Workspace Width Note Detail Reader View */}
+      {openedNote && (
         <NoteDetailView
-          note={selectedNote}
-          onClose={() => setSelectedNote(null)}
+          note={openedNote}
+          onClose={() => dispatch(clearOpenedNote())}
         />
       )}
     </div>

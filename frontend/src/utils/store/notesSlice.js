@@ -2,17 +2,26 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const notesSlice = createSlice({
   name: "notes",
-  initialState: [],
+  initialState: {
+    list: [],
+    openedNote: null,
+  },
   reducers: {
     setNotes: (state, action) => {
-      return action.payload;
+      state.list = action.payload;
     },
     addSingleNote: (state, action) => {
-      state.push(action.payload);
+      state.list.push(action.payload);
+    },
+    setOpenedNote: (state, action) => {
+      state.openedNote = action.payload;
+    },
+    clearOpenedNote: (state) => {
+      state.openedNote = null;
     },
   },
 });
 
-export const { setNotes, addSingleNote } = notesSlice.actions;
+export const { setNotes, addSingleNote, setOpenedNote, clearOpenedNote } = notesSlice.actions;
 
 export default notesSlice.reducer;

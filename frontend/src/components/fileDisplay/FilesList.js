@@ -6,7 +6,7 @@ import { setNotes } from "../../utils/store/notesSlice";
 
 const FilesList = ({ onNoteSelect }) => {
   const dispatch = useDispatch();
-  const notesList = useSelector((store) => store.notes);
+  const notesList = useSelector((store) => store.notes.list || (Array.isArray(store.notes) ? store.notes : []));
 
   useEffect(() => {
     const fetchNotes = async () => {
