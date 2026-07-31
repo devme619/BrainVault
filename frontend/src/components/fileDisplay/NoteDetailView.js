@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { updateNoteContent } from "../../utils/store/notesSlice";
+import { updateNoteApi } from "../../apis/notesAPI";
 import FilePreview from "../reusableComponents/FilePreview";
 import RichTextEditor from "./RichTextEditor";
 import { convertFileToText } from "../../apis/evaluationAPIs";
@@ -50,6 +51,14 @@ const NoteDetailView = ({ note, onClose }) => {
         setExtractedText(result.extracted_text);
         setWordCount(result.word_count || 0);
         setCharCount(result.character_count || 0);
+
+        // Sync extracted text to backend if note has an ID
+        if (note.id) {
+          updateNoteApi(note.id, {
+            ...note,
+            extractedText: result.extracted_text,
+          }).catch((err) => console.warn("Failed to sync OCR text to backend:", err));
+        }
       } else {
         setError("No text could be extracted from this document.");
       }
@@ -68,13 +77,24 @@ const NoteDetailView = ({ note, onClose }) => {
     }
   };
 
-  const handleSaveRichText = (newHtmlContent) => {
+  const handleSaveRichText = async (newHtmlContent) => {
     dispatch(
       updateNoteContent({
         id: note.id,
         textContent: newHtmlContent,
       })
     );
+
+    if (note.id) {
+      try {
+        await updateNoteApi(note.id, {
+          ...note,
+          textContent: newHtmlContent,
+        });
+      } catch (err) {
+        console.warn("Failed to persist rich text content to backend PostgreSQL:", err);
+      }
+    }
   };
 
   const hasFile = Boolean(note.fileUrl || note.file);

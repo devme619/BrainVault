@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../utils/store/userSlice";
+import { setNotes, clearOpenedNote } from "../utils/store/notesSlice";
+import { resetCheckAnswers } from "../utils/store/checkAnswersSlice";
 import { signupUser, loginUser, googleAuthUser } from "../apis/authAPI";
 import Header from "./Header";
 import background from "../assests/images/bg.png";
@@ -26,6 +28,12 @@ const Login = () => {
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
     setError("");
+  };
+
+  const clearPreviousUserData = () => {
+    dispatch(setNotes([]));
+    dispatch(clearOpenedNote());
+    dispatch(resetCheckAnswers());
   };
 
   const handleSubmit = async (e) => {
@@ -55,6 +63,8 @@ const Login = () => {
     setLoading(true);
 
     try {
+      clearPreviousUserData();
+
       if (isSignUp) {
         const response = await signupUser({
           full_name: fullName,
@@ -95,6 +105,7 @@ const Login = () => {
     setLoading(true);
     setError("");
     try {
+      clearPreviousUserData();
       const response = await googleAuthUser(googleUserData);
 
       dispatch(

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../utils/store/userSlice";
+import { setNotes, clearOpenedNote } from "../utils/store/notesSlice";
+import { resetCheckAnswers } from "../utils/store/checkAnswersSlice";
 import Logo from "../assests/icons/brainvault_logo.svg";
 import avatar_boy from "../assests/icons/avatar_boy.svg";
 
@@ -13,6 +15,9 @@ const Header = () => {
 
   const handleLogout = () => {
     dispatch(logoutUser());
+    dispatch(setNotes([]));
+    dispatch(clearOpenedNote());
+    dispatch(resetCheckAnswers());
     setShowDropdown(false);
     navigate("/");
   };

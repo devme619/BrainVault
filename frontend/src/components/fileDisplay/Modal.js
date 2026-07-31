@@ -33,26 +33,24 @@ const Modal = ({ heading, setIsModalOpen }) => {
     const payload = {
       name: nameVal,
       description: description.current.value.trim() || "",
-      file: selectedFile?.file || null,
       fileUrl: selectedFile?.url || null,
       fileType: selectedFile?.type || null,
       fileName: selectedFile?.name || null,
     };
 
     try {
-      const createdBackendNote = await addNote({
-        name: payload.name,
-        description: payload.description,
-      }).catch(() => null);
+      const createdBackendNote = await addNote(payload).catch(() => null);
 
       const noteToStore = {
         id: createdBackendNote?.id || Date.now(),
-        name: payload.name,
-        description: payload.description,
-        file: payload.file,
-        fileUrl: payload.fileUrl,
-        fileType: payload.fileType,
-        fileName: payload.fileName,
+        name: createdBackendNote?.name || payload.name,
+        description: createdBackendNote?.description || payload.description,
+        file: selectedFile?.file || null,
+        fileUrl: createdBackendNote?.fileUrl || payload.fileUrl,
+        fileType: createdBackendNote?.fileType || payload.fileType,
+        fileName: createdBackendNote?.fileName || payload.fileName,
+        extractedText: createdBackendNote?.extractedText || null,
+        textContent: createdBackendNote?.textContent || null,
       };
 
       dispatch(addSingleNote(noteToStore));
