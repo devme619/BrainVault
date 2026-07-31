@@ -2,6 +2,10 @@ from datetime import datetime, timedelta
 import jwt
 import bcrypt
 from typing import Optional
+from fastapi import Header, HTTPException, Depends, status
+from sqlalchemy.orm import Session
+from app.database.database import get_db
+from app.database import models
 
 SECRET_KEY = "brainvault_secret_key_upsc_air1_super_secure_jwt"
 ALGORITHM = "HS256"
@@ -40,3 +44,24 @@ def decode_token(token: str) -> Optional[dict]:
         return payload
     except Exception:
         return None
+
+def get_current_user_optional(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)) -> Optional[models.User]:
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split(" ")[1]
+    payload = decode_token(token)
+    if not payload:
+        return None
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+    return db.query(models.User).filter(models.User.id == int(user_id)).first()
+
+def get_current_user(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)) -> models.User:
+    user = get_current_user_optional(authorization, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token missing or invalid. Please sign in."
+        )
+    return user

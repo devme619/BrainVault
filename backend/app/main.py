@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.database import engine
 from app.database import models
+from app.database.init_db import upgrade_db_schema
 
 from app.routers import notes
 from app.routers import evaluation
@@ -12,7 +13,9 @@ app = FastAPI(
     title="BrainVault API"
 )
 
+# Auto-recreate missing tables & upgrade existing schema to include user_id
 models.Base.metadata.create_all(bind=engine)
+upgrade_db_schema()
 
 origins = [
     "http://localhost:3000",
