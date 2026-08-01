@@ -14,6 +14,7 @@ export async function createNote(payload) {
     const backendPayload = {
       name: payload.name,
       description: payload.description || "",
+      subject_topic_id: payload.subjectTopicId || payload.subject_topic_id || null,
       file_url: payload.fileUrl || payload.file_url || null,
       file_type: payload.fileType || payload.file_type || null,
       file_name: payload.fileName || payload.file_name || null,
@@ -45,6 +46,7 @@ export async function updateNoteApi(noteId, payload) {
     const backendPayload = {
       name: payload.name,
       description: payload.description || "",
+      subject_topic_id: payload.subjectTopicId || payload.subject_topic_id || null,
       file_url: payload.fileUrl || payload.file_url || null,
       file_type: payload.fileType || payload.file_type || null,
       file_name: payload.fileName || payload.file_name || null,
@@ -69,9 +71,14 @@ export async function updateNoteApi(noteId, payload) {
   }
 }
 
-export async function getNotes() {
+export async function getNotes(subjectTopicId = null) {
   try {
-    const response = await fetch(`${BASE_URL}/notes/`, {
+    let url = `${BASE_URL}/notes/`;
+    if (subjectTopicId) {
+      url += `?subject_topic_id=${subjectTopicId}`;
+    }
+
+    const response = await fetch(url, {
       method: "GET",
       headers: getAuthHeaders(),
     });
@@ -97,6 +104,7 @@ function mapBackendNoteToFrontend(note) {
   return {
     id: note.id,
     user_id: note.user_id,
+    subjectTopicId: note.subject_topic_id || note.subjectTopicId || null,
     name: note.name,
     description: note.description,
     fileUrl: note.file_url || note.fileUrl || null,

@@ -11,29 +11,39 @@ router = APIRouter(
     tags=["Notes"]
 )
 
+def get_all_subtopic_ids(db: Session, parent_id: int, user_id: int) -> List[int]:
+    """Helper to collect parent_id and all its nested subtopic IDs recursively."""
+    topic_ids = [parent_id]
+    children = db.query(models.SubjectTopic.id).filter(
+        models.SubjectTopic.parent_id == parent_id,
+        models.SubjectTopic.user_id == user_id
+    ).all()
+    for child in children:
+        topic_ids.extend(get_all_subtopic_ids(db, child.id, user_id))
+    return topic_ids
+
+
 @router.get("/", response_model=List[NoteResponse])
 def get_notes(
+    subject_topic_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_current_user_optional)
 ):
-    try:
-        models.Base.metadata.create_all(bind=engine)
-    except Exception:
-        pass
-
     if not current_user:
         return []
 
     try:
-        notes = db.query(models.Notes).filter(models.Notes.user_id == current_user.id).order_by(models.Notes.id.desc()).all()
+        query = db.query(models.Notes).filter(models.Notes.user_id == current_user.id)
+        
+        if subject_topic_id is not None:
+            all_ids = get_all_subtopic_ids(db, subject_topic_id, current_user.id)
+            query = query.filter(models.Notes.subject_topic_id.in_(all_ids))
+
+        notes = query.order_by(models.Notes.id.desc()).all()
         return notes
     except Exception:
         db.rollback()
-        try:
-            models.Base.metadata.create_all(bind=engine)
-            return db.query(models.Notes).filter(models.Notes.user_id == current_user.id).order_by(models.Notes.id.desc()).all()
-        except Exception:
-            return []
+        return []
 
 
 @router.post("/", response_model=NoteResponse)
@@ -42,11 +52,6 @@ def create_note(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    try:
-        models.Base.metadata.create_all(bind=engine)
-    except Exception:
-        pass
-
     existing_note = (
         db.query(models.Notes)
         .filter(models.Notes.user_id == current_user.id, models.Notes.name == note.name)
@@ -61,6 +66,7 @@ def create_note(
 
     new_note = models.Notes(
         user_id=current_user.id,
+        subject_topic_id=note.subject_topic_id,
         name=note.name,
         description=note.description,
         file_url=note.file_url,
@@ -97,6 +103,8 @@ def update_note(
 
     note.name = note_data.name
     note.description = note_data.description
+    if note_data.subject_topic_id is not None:
+        note.subject_topic_id = note_data.subject_topic_id
     if note_data.text_content is not None:
         note.text_content = note_data.text_content
     if note_data.extracted_text is not None:

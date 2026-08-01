@@ -8,21 +8,28 @@ import NoteDetailView from "./NoteDetailView";
 const FileContainer = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const dispatch = useDispatch();
-  const openedNote = useSelector((store) => store.notes.openedNote);
+  const { openedNote, selectedSubjectTopic } = useSelector((store) => store.notes);
 
   const handleOnClick = () => {
     setIsModalOpen(true);
   };
+
+  const headerTitle = selectedSubjectTopic ? selectedSubjectTopic.name : "All Subjects & Notes";
 
   return (
     <div className="relative w-full h-full overflow-y-auto hide-scrollbar">
       {/* Sticky Header */}
       <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 py-4 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
-          <span className="text-xl">📖</span>
-          <h1 className="text-lg font-bold text-slate-100 tracking-wide">
-            Subject Name
-          </h1>
+          <span className="text-xl">{selectedSubjectTopic ? "📚" : "📂"}</span>
+          <div>
+            <h1 className="text-lg font-bold text-slate-100 tracking-wide">
+              {headerTitle}
+            </h1>
+            {selectedSubjectTopic && (
+              <p className="text-[11px] text-emerald-400 font-mono">Filtered Subject Workspace</p>
+            )}
+          </div>
         </div>
 
         <button

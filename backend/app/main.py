@@ -8,12 +8,13 @@ from app.database.init_db import upgrade_db_schema
 from app.routers import notes
 from app.routers import evaluation
 from app.routers import auth
+from app.routers import subject_topics
 
 app = FastAPI(
     title="BrainVault API"
 )
 
-# Auto-recreate missing tables & upgrade existing schema to include user_id
+# Auto-recreate missing tables & upgrade existing schema to include user_id and subject_topics
 models.Base.metadata.create_all(bind=engine)
 upgrade_db_schema()
 
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(notes.router)
 app.include_router(evaluation.router)
 app.include_router(auth.router)
+app.include_router(subject_topics.router)
 
 @app.get("/")
 def root():

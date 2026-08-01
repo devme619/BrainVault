@@ -5,19 +5,27 @@ const notesSlice = createSlice({
   initialState: {
     list: [],
     openedNote: null,
+    subjectTopicsTree: [],
+    selectedSubjectTopic: null, // null means "All Subjects / Notes"
   },
   reducers: {
     setNotes: (state, action) => {
       state.list = action.payload;
     },
     addSingleNote: (state, action) => {
-      state.list.push(action.payload);
+      state.list.unshift(action.payload);
     },
     setOpenedNote: (state, action) => {
       state.openedNote = action.payload;
     },
     clearOpenedNote: (state) => {
       state.openedNote = null;
+    },
+    setSubjectTopicsTree: (state, action) => {
+      state.subjectTopicsTree = action.payload;
+    },
+    setSelectedSubjectTopic: (state, action) => {
+      state.selectedSubjectTopic = action.payload;
     },
     updateNoteContent: (state, action) => {
       const { id, textContent } = action.payload;
@@ -37,6 +45,8 @@ export const {
   addSingleNote,
   setOpenedNote,
   clearOpenedNote,
+  setSubjectTopicsTree,
+  setSelectedSubjectTopic,
   updateNoteContent,
 } = notesSlice.actions;
 

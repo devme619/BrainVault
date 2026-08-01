@@ -18,6 +18,21 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     notes = relationship("Notes", back_populates="user", cascade="all, delete-orphan")
+    subject_topics = relationship("SubjectTopic", back_populates="user", cascade="all, delete-orphan")
+
+
+class SubjectTopic(Base):
+    __tablename__ = "subject_topics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey("subject_topics.id", ondelete="CASCADE"), nullable=True, index=True)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User", back_populates="subject_topics")
+    children = relationship("SubjectTopic", backref="parent", cascade="all, delete-orphan", remote_side=[id])
+    notes = relationship("Notes", back_populates="subject_topic", cascade="all, delete-orphan")
 
 
 class Notes(Base):
@@ -25,6 +40,7 @@ class Notes(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    subject_topic_id = Column(Integer, ForeignKey("subject_topics.id", ondelete="SET NULL"), nullable=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     file_url = Column(String, nullable=True)
@@ -35,3 +51,4 @@ class Notes(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="notes")
+    subject_topic = relationship("SubjectTopic", back_populates="notes")

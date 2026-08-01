@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import SubjectTree from "./SubjectTree";
 
 const SideNav = () => {
   const location = useLocation();
@@ -8,7 +9,7 @@ const SideNav = () => {
   const isCheckAnswersActive = location.pathname.includes("/home/checkanswers");
 
   return (
-    <nav className="flex flex-col gap-2 pt-2">
+    <nav className="flex flex-col gap-2 pt-2 h-full overflow-y-auto">
       <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         Navigation
       </div>
@@ -25,7 +26,10 @@ const SideNav = () => {
         </button>
       </Link>
 
-      <Link to="/home/checkanswers">
+      {/* Subject & Subtopics Tree inside Notes Feed */}
+      {isHomeActive && <SubjectTree />}
+
+      <Link to="/home/checkanswers" className="mt-2">
         <button
           className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-3 cursor-pointer ${
             isCheckAnswersActive
