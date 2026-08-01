@@ -1,5 +1,6 @@
 import requests
 import json
+import re
 from typing import Dict, Any, Optional
 
 UPSC_EVALUATION_SYSTEM_PROMPT = """You are an expert UPSC Civil Services Mains Answer Evaluator and Top-Ranker Mentor. 
@@ -30,11 +31,93 @@ Return ONLY a valid JSON object with the following schema:
 }
 """
 
+ORGANIZE_NOTE_SYSTEM_PROMPT = """You are an expert UPSC Civil Services Study Note Architect and Content Structurer.
+Your task is to take raw, messy, or OCR-transcribed study notes and transform them into a beautifully structured, highly readable study note.
+
+Requirements:
+1. Provide a clear, professional H1 title based on the core topic.
+2. Group content into logical H2 and H3 headings and subheadings.
+3. Convert lists of items, points, or arguments into clean <ul> / <li> bullet lists.
+4. Bold key UPSC terminology, landmark constitutional articles, acts, and policy schemes.
+5. Include a <blockquote> block for key takeaways or exam tips.
+6. Return ONLY clean, valid semantic HTML (e.g. <h1>, <h2>, <h3>, <p>, <ul>, <li>, <strong>, <span>, <blockquote>) ready to be embedded directly into a rich text editor. Do NOT wrap in ```html code fences.
+"""
+
+def fallback_local_organize_html(text: str) -> str:
+    """Intelligent fallback rule-based HTML note structurer when offline or without external API keys."""
+    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+    if not sentences:
+        return "<h1>UPSC Study Note</h1><p>No text content available.</p>"
+
+    title = sentences[0][:80]
+    body_sentences = sentences[1:] if len(sentences) > 1 else sentences
+
+    html_parts = [
+        f"<h1>📖 {title}</h1>",
+        "<h2>📌 Executive Overview</h2>",
+        f"<p>{sentences[0]}.</p>",
+        "<h2>📜 Core Key Points & Key Terms</h2>",
+        "<ul>"
+    ]
+
+    for idx, s in enumerate(body_sentences):
+        # Highlight UPSC key terms
+        highlighted_s = re.sub(
+            r'\b(Article|Act|Scheme|PMKSY|PMFBY|NITI Aayog|Schedule|Part|SDG|Constitution|Devolution|PRIs|Panchayat)\b',
+            r'<strong>\1</strong>',
+            s,
+            flags=re.IGNORECASE
+        )
+        html_parts.append(f"<li>{highlighted_s}.</li>")
+
+    html_parts.append("</ul>")
+    html_parts.append("<h2>💡 UPSC Exam Takeaways</h2>")
+    html_parts.append("<blockquote><strong>Mentor Note:</strong> Use structured 3-tier analysis (Intro, Body with subheadings, Vision Conclusion) when attempting Mains answer writing on this topic.</blockquote>")
+
+    return "\n".join(html_parts)
+
+
+def organize_note_text(extracted_text: str, provider: Optional[str] = None, api_key: Optional[str] = None, model_name: Optional[str] = None) -> Dict[str, Any]:
+    """Organizes raw OCR text into structured HTML with headings and bullet points."""
+    provider_clean = (provider or "custom_ml").lower().strip()
+
+    if provider_clean in ("custom_ml", "local") or not api_key:
+        organized_html = fallback_local_organize_html(extracted_text)
+        return {"organized_text": organized_html}
+
+    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
+
+    prompt = f"{ORGANIZE_NOTE_SYSTEM_PROMPT}\n\nRaw Extracted Note Text to Structure:\n\"\"\"\n{extracted_text}\n\"\"\""
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.2}
+    }
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=60)
+        if response.status_code == 200:
+            res_data = response.json()
+            candidates = res_data.get("candidates", [])
+            if candidates:
+                raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                clean_html = raw_text.strip()
+                if clean_html.startswith("```"):
+                    clean_html = clean_html.split("\n", 1)[-1]
+                    if clean_html.endswith("```"):
+                        clean_html = clean_html.rsplit("```", 1)[0]
+                    clean_html = clean_html.strip()
+                    if clean_html.startswith("html"):
+                        clean_html = clean_html[4:].strip()
+                return {"organized_text": clean_html}
+    except Exception:
+        pass
+
+    return {"organized_text": fallback_local_organize_html(extracted_text)}
+
+
 def evaluate_with_custom_ml(extracted_text: str) -> Dict[str, Any]:
-    """
-    Evaluates answer sheet using BrainVault Custom UPSC ML Model.
-    Attempts HTTP call to standalone microservice on port 8001, falling back to direct Python invocation.
-    """
     url = "http://localhost:8001/evaluate"
     payload = {"extracted_text": extracted_text}
     
@@ -45,7 +128,6 @@ def evaluate_with_custom_ml(extracted_text: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # Direct local Python invocation fallback if microservice on 8001 is not running
     try:
         import sys
         import os
@@ -63,7 +145,6 @@ def evaluate_with_custom_ml(extracted_text: str) -> Dict[str, Any]:
 def evaluate_with_gemini(extracted_text: str, api_key: str, model_name: str = "gemini-2.0-flash") -> Dict[str, Any]:
     clean_model = model_name.replace("models/", "").strip() if model_name else "gemini-2.0-flash"
     
-    # Map deprecated or alias model names to active Google AI Studio models
     model_aliases = {
         "gemini-1.5-pro": "gemini-1.5-pro-latest",
         "gemini-1.5-flash": "gemini-1.5-flash-latest",
@@ -118,7 +199,6 @@ def evaluate_with_gemini(extracted_text: str, api_key: str, model_name: str = "g
                     err_detail = response.json().get("error", {}).get("message", response.text)
                     last_error = f"Gemini API Error ({response.status_code}): {err_detail}"
                     
-                    # If API Key is invalid or quota exceeded (400, 401, 403), return error immediately
                     if response.status_code in (401, 403) or "key not valid" in err_detail.lower():
                         return {"error": last_error}
                 except Exception as e:

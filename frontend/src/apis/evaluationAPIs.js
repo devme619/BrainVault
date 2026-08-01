@@ -25,3 +25,24 @@ export const convertFileToText = async (fileObj, aiOptions = {}) => {
 
   return response.json();
 };
+
+export const organizeNoteTextAPI = async (extractedText, aiOptions = {}) => {
+  const payload = {
+    extracted_text: extractedText,
+    provider: aiOptions.provider || localStorage.getItem("bv_ai_provider") || "custom_ml",
+    api_key: aiOptions.apiKey || localStorage.getItem("bv_ai_key") || "",
+    model_name: aiOptions.modelName || localStorage.getItem("bv_ai_model") || "brainvault-upsc-ml-v1",
+  };
+
+  const response = await fetch(`${API_BASE_URL}/evaluation/organize-text`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to organize note text with AI");
+  }
+
+  return response.json();
+};
