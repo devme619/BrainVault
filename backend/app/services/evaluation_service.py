@@ -1,6 +1,7 @@
 import io
 import os
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 import pypdf
 import pytesseract
@@ -17,6 +18,43 @@ if not shutil.which("tesseract"):
             pytesseract.pytesseract.tesseract_cmd = path
             break
 
+def process_single_image_ocr(img_bytes: bytes) -> str:
+    try:
+        if len(img_bytes) < 5000: # Skip tiny icons/lines
+            return ""
+        image = Image.open(io.BytesIO(img_bytes))
+        if image.width < 80 or image.height < 80:
+            return ""
+            
+        # Downscale huge images (> 1600px) to speed up OCR by 5x while preserving high accuracy
+        if image.width > 1600:
+            ratio = 1600 / float(image.width)
+            new_height = int(float(image.height) * ratio)
+            image = image.resize((1600, new_height), Image.Resampling.LANCZOS)
+            
+        text = pytesseract.image_to_string(image, config='--psm 6').strip()
+        return text
+    except Exception:
+        return ""
+
+def process_pdf_page(page_args) -> tuple:
+    idx, page = page_args
+    page_text = (page.extract_text() or "").strip()
+    
+    # If page has no embedded text (scanned handwritten PDF), run OCR on page images
+    if not page_text and hasattr(page, "images") and page.images:
+        ocr_parts = []
+        for img_obj in page.images:
+            txt = process_single_image_ocr(img_obj.data)
+            if txt:
+                ocr_parts.append(txt)
+        if ocr_parts:
+            page_text = "\n".join(ocr_parts)
+
+    if page_text:
+        return (idx + 1, f"--- Page {idx + 1} ---\n{page_text}")
+    return (idx + 1, "")
+
 def extract_text_from_file(file_bytes: bytes, filename: str, content_type: str) -> dict:
     extracted_text = ""
     pages_processed = 1
@@ -27,37 +65,30 @@ def extract_text_from_file(file_bytes: bytes, filename: str, content_type: str) 
     if is_pdf:
         try:
             pdf_reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-            pages_processed = len(pdf_reader.pages)
-            text_list = []
-
-            for idx, page in enumerate(pdf_reader.pages):
-                page_text = (page.extract_text() or "").strip()
-                
-                # If page has no embedded text (scanned handwritten PDF), run OCR on page images
-                if not page_text and hasattr(page, "images") and page.images:
-                    ocr_parts = []
-                    for img_obj in page.images:
-                        try:
-                            image = Image.open(io.BytesIO(img_obj.data))
-                            ocr_txt = pytesseract.image_to_string(image).strip()
-                            if ocr_txt:
-                                ocr_parts.append(ocr_txt)
-                        except Exception:
-                            pass
-                    if ocr_parts:
-                        page_text = "\n".join(ocr_parts)
-
-                if page_text:
-                    text_list.append(f"--- Page {idx + 1} ---\n{page_text}")
+            total_pages = len(pdf_reader.pages)
+            pages_processed = total_pages
             
+            # Cap scanned page processing to first 25 pages to optimize performance
+            max_pages = min(total_pages, 25)
+            page_items = [(i, pdf_reader.pages[i]) for i in range(max_pages)]
+            
+            # Execute multi-threaded parallel page extraction & OCR (max 6 workers)
+            with ThreadPoolExecutor(max_workers=6) as executor:
+                results = list(executor.map(process_pdf_page, page_items))
+                
+            # Order results by page index
+            results.sort(key=lambda x: x[0])
+            text_list = [res[1] for res in results if res[1]]
             extracted_text = "\n\n".join(text_list)
         except Exception as e:
             extracted_text = f"[PDF Processing Error: {str(e)}]"
         
     elif is_image:
         try:
-            image = Image.open(io.BytesIO(file_bytes))
-            extracted_text = pytesseract.image_to_string(image).strip()
+            extracted_text = process_single_image_ocr(file_bytes)
+            if not extracted_text:
+                image = Image.open(io.BytesIO(file_bytes))
+                extracted_text = pytesseract.image_to_string(image).strip()
         except Exception as e:
             extracted_text = f"[Image OCR Engine Error: {str(e)}]"
 

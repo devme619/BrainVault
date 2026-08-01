@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "question": "Examine the impact of climate change on Indian monsoon patterns and discuss the preparedness of Indian agriculture to cope with erratic rainfall.",
+    "extracted_text": "Climate change is a major global issue affecting India heavily. Monsoon rainfall has become erratic with severe droughts in some regions and flash floods in others. Global warming increases sea surface temperatures in the Indian Ocean, causing unpredictable monsoon onset. Agriculture in India depends heavily on rainfall since over 50 percent of cultivated area lacks irrigation. Farmers face crop loss due to sudden dry spells during critical growth stages. Government has launched schemes like PMKSY and PMFBY. Micro-irrigation and climate-resilient crop varieties need wider adoption.",
+    "actual_score": 9.5,
+    "max_score": 15,
+    "grade": "Good",
+    "introduction_assessment": "Clear introduction defining the core linkage between global warming, Indian Ocean sea surface temperatures, and erratic monsoon onset.",
+    "body_assessment": "Well-structured body discussing agricultural dependence (>50% rainfed land), crop failure vulnerability, and current policy interventions like PMKSY and PMFBY.",
+    "conclusion_assessment": "Forward-looking conclusion emphasizing climate-resilient crop varieties and micro-irrigation expansion.",
+    "keywords_covered": ["monsoon", "climate change", "sea surface temperature", "PMKSY", "PMFBY", "micro-irrigation"],
+    "missing_keywords": ["SDG 13", "IPCC AR6 report", "El Nino Southern Oscillation", "rainwater harvesting"],
+    "strengths": ["Clear quantitative references (>50% rainfed land)", "Relevant policy scheme mentions"],
+    "weaknesses": ["Lacks explicit reference to IPCC reports", "Could include a flowchart on monsoon mechanisms"],
+    "improvement_tips": ["Mention IPCC AR6 projections for South Asian monsoon", "Link recommendations with Paris Agreement commitments"]
+  },
+  {
+    "id": 2,
+    "question": "Discuss the significance of the 73rd Constitutional Amendment Act in empowering Panchayati Raj Institutions in India.",
+    "extracted_text": "The 73rd Constitutional Amendment Act of 1992 gave constitutional status to Panchayati Raj Institutions (PRIs) by adding Part IX and 11th Schedule to the Constitution. It introduced a 3-tier system: Gram Panchayat, Panchayat Samiti, and Zilla Parishad. Regular elections every 5 years are mandated under State Election Commission. Mandatory 33% reservation for women has boosted grassroots female leadership. Finance Commission under Article 243-I ensures financial transfers. However, 3Ds - Funds, Functions, and Functionaries - remain incomplete due to reluctance of state governments to devolve powers.",
+    "actual_score": 11.5,
+    "max_score": 15,
+    "grade": "Very Good",
+    "introduction_assessment": "Excellent introduction highlighting Part IX, 11th Schedule, and 1992 constitutional backing.",
+    "body_assessment": "Comprehensive breakdown of 3-tier structure, regular elections, 33% women reservation, and Article 243-I Finance Commission role.",
+    "conclusion_assessment": "Strong analytical conclusion focusing on the core challenge: devolution of Funds, Functions, and Functionaries (3Ds).",
+    "keywords_covered": ["73rd Amendment", "Part IX", "11th Schedule", "3-tier system", "Article 243-I", "3Ds devolution"],
+    "missing_keywords": ["Gram Sabha empowerment", "Second ARC recommendations", "e-Gram Swaraj"],
+    "strengths": ["Precise constitutional article citations", "Structured analysis of democratic decentralization"],
+    "weaknesses": ["Could elaborate on Gram Sabha's role in social audit"],
+    "improvement_tips": ["Incorporate 2nd ARC recommendations on devolution index", "Suggest capacity building for elected women representatives (EWRs)"]
+  },
+  {
+    "id": 3,
+    "question": "Critically analyze the role of Artificial Intelligence in governance and public service delivery in India.",
+    "extracted_text": "Artificial Intelligence is transforming governance. NITI Aayog's National Strategy for AI 'AIforAll' focuses on agriculture, healthcare, and education. AI chatbots assist in grievance redressal and welfare scheme dissemination. Predictive analytics helps in disaster management and urban traffic control. However, challenges include digital divide, data privacy issues, lack of local language datasets, and bias in algorithmic decision making. A robust ethical AI framework and data protection legislation are necessary.",
+    "actual_score": 8.0,
+    "max_score": 15,
+    "grade": "Average",
+    "introduction_assessment": "Good introductory mention of NITI Aayog's AIforAll strategy.",
+    "body_assessment": "Identifies key applications (grievance chatbots, disaster analytics) and key challenges (digital divide, data privacy, algorithmic bias).",
+    "conclusion_assessment": "Brief conclusion emphasizing ethical AI governance.",
+    "keywords_covered": ["NITI Aayog", "AIforAll", "predictive analytics", "digital divide", "data privacy", "ethical AI"],
+    "missing_keywords": ["Digital Personal Data Protection Act", "Bhashini AI", "facial recognition concerns"],
+    "strengths": ["Addresses both opportunities and structural challenges"],
+    "weaknesses": ["Lacks specific case studies like Bhashini or Telangana AI initiative", "Short answer length"],
+    "improvement_tips": ["Add examples like AI-driven crop yield prediction in Karnataka", "Discuss DPDP Act safeguards"]
+  }
+]

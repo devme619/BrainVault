@@ -3,6 +3,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { triggerAIEvaluation, setActiveTab } from "../../utils/store/checkAnswersSlice";
 
 const PROVIDER_MODELS = {
+  custom_ml: [
+    { id: "brainvault-upsc-ml-v1", name: "BrainVault Custom UPSC Model (Local ML)" },
+  ],
   gemini: [
     { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Recommended Fast)" },
     { id: "gemini-1.5-flash-latest", name: "Gemini 1.5 Flash Latest" },
@@ -25,11 +28,11 @@ const AIEvaluationWindow = ({ selectedFile }) => {
     (store) => store.checkAnswers
   );
 
-  const [provider, setProvider] = useState(localStorage.getItem("bv_ai_provider") || "gemini");
-  const [modelName, setModelName] = useState(localStorage.getItem("bv_ai_model") || "gemini-2.0-flash");
+  const [provider, setProvider] = useState(localStorage.getItem("bv_ai_provider") || "custom_ml");
+  const [modelName, setModelName] = useState(localStorage.getItem("bv_ai_model") || "brainvault-upsc-ml-v1");
   const [apiKey, setApiKey] = useState(localStorage.getItem("bv_ai_key") || "");
   const [showKey, setShowKey] = useState(false);
-  const [showSettings, setShowSettings] = useState(!localStorage.getItem("bv_ai_key"));
+  const [showSettings, setShowSettings] = useState(false);
 
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -51,8 +54,9 @@ const AIEvaluationWindow = ({ selectedFile }) => {
   const handleRunEvaluation = async () => {
     if (!selectedFile?.file) return;
 
-    if (!apiKey) {
-      setError("Please enter your free API Key in AI Settings below before running evaluation.");
+    // Custom ML model is 100% local and free - API Key not required
+    if (provider !== "custom_ml" && !apiKey) {
+      setError("Please enter your API Key in AI Settings below before running evaluation.");
       setShowSettings(true);
       return;
     }
@@ -92,7 +96,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
             <span>🤖</span> AI Evaluation Window
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Evaluate answer sheets with your preferred AI model & API key.
+            Evaluate answer sheets using custom trained UPSC ML model or external APIs.
           </p>
         </div>
         <button
@@ -115,7 +119,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
               🔑 Provider & Model Setup
             </span>
-            <span className="text-[11px] text-slate-400">Keys stored locally in browser</span>
+            <span className="text-[11px] text-slate-400">Custom ML is 100% Free & Offline</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -126,11 +130,12 @@ const AIEvaluationWindow = ({ selectedFile }) => {
               <select
                 value={provider}
                 onChange={handleProviderChange}
-                className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
-                <option value="gemini">Google Gemini (Recommended)</option>
-                <option value="grok">xAI Grok</option>
-                <option value="openrouter">OpenRouter (Free LLMs)</option>
+                <option value="custom_ml">BrainVault Custom UPSC Model (Offline ML)</option>
+                <option value="gemini">Google Gemini Cloud API</option>
+                <option value="grok">xAI Grok API</option>
+                <option value="openrouter">OpenRouter Free API</option>
               </select>
             </div>
 
@@ -141,7 +146,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
               <select
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
-                className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full p-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 {PROVIDER_MODELS[provider]?.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -152,39 +157,46 @@ const AIEvaluationWindow = ({ selectedFile }) => {
             </div>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-xs font-semibold text-slate-300">
-                API Key for {provider.toUpperCase()} <span className="text-red-400">*</span>
-              </label>
-              {provider === "gemini" && (
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[11px] text-emerald-400 hover:underline"
+          {provider !== "custom_ml" ? (
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-semibold text-slate-300">
+                  API Key for {provider.toUpperCase()} <span className="text-red-400">*</span>
+                </label>
+                {provider === "gemini" && (
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-emerald-400 hover:underline"
+                  >
+                    Get Free Gemini Key ↗
+                  </a>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type={showKey ? "text" : "password"}
+                  placeholder={`Paste your ${provider.toUpperCase()} API key here...`}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 pr-16"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-2 top-2 text-[10px] text-slate-400 hover:text-slate-200 px-2 py-0.5 rounded bg-slate-800 border border-slate-700"
                 >
-                  Get Free Gemini Key ↗
-                </a>
-              )}
+                  {showKey ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
-            <div className="relative">
-              <input
-                type={showKey ? "text" : "password"}
-                placeholder={`Paste your ${provider.toUpperCase()} API key here...`}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 pr-16"
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey(!showKey)}
-                className="absolute right-2 top-2 text-[10px] text-slate-400 hover:text-slate-200 px-2 py-0.5 rounded bg-slate-800 border border-slate-700"
-              >
-                {showKey ? "Hide" : "Show"}
-              </button>
+          ) : (
+            <div className="p-2.5 bg-emerald-950/40 border border-emerald-800/60 rounded-lg text-xs text-emerald-300 flex items-center gap-2">
+              <span>⚡</span>
+              <span>Runs locally on your machine with 0 API cost and no rate limits.</span>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -197,10 +209,10 @@ const AIEvaluationWindow = ({ selectedFile }) => {
         {isEvaluating ? (
           <>
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Evaluating with {modelName} in background...</span>
+            <span>Evaluating with Custom UPSC ML Model in background...</span>
           </>
         ) : (
-          <span>Run AI Evaluation ({provider.toUpperCase()})</span>
+          <span>Run AI Evaluation ({provider === "custom_ml" ? "Custom Local ML" : provider.toUpperCase()})</span>
         )}
       </button>
 
@@ -217,7 +229,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
             <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
             <p className="font-semibold text-slate-200 text-sm">Evaluating Answer Sheet...</p>
             <p className="text-slate-500 max-w-xs">
-              AI model is analyzing your answer sheet in the background. You can freely switch tabs anytime!
+              BrainVault Custom UPSC Model is analyzing your answer sheet in the background. You can freely switch tabs anytime!
             </p>
           </div>
         ) : evaluationData ? (
@@ -265,7 +277,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
                   <div className="p-4 bg-slate-950/90 border border-slate-800 rounded-xl flex items-center justify-between shadow-lg">
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                        Evaluated by {modelName}
+                        Evaluated by {report.evaluator_type || modelName}
                       </span>
                       <h3 className="text-lg font-extrabold text-slate-100 mt-0.5">
                         Grade: <span className="text-emerald-400">{report.grade || "Evaluated"}</span>
@@ -379,7 +391,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
               ) : (
                 <div className="m-auto text-center text-slate-500 text-xs flex flex-col items-center gap-2">
                   <div className="text-3xl opacity-50">🤖</div>
-                  <p>No LLM evaluation report yet. Click "Run AI Evaluation" above.</p>
+                  <p>No ML evaluation report yet. Click "Run AI Evaluation" above.</p>
                 </div>
               )
             ) : (
@@ -392,7 +404,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
         ) : (
           <div className="m-auto text-center text-slate-500 text-xs flex flex-col items-center gap-2">
             <div className="text-3xl opacity-50">✨</div>
-            <p>Select your AI Model & API Key above, then click "Run AI Evaluation".</p>
+            <p>Select an answer sheet on the left, then click "Run AI Evaluation".</p>
           </div>
         )}
       </div>

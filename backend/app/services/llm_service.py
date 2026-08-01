@@ -30,6 +30,36 @@ Return ONLY a valid JSON object with the following schema:
 }
 """
 
+def evaluate_with_custom_ml(extracted_text: str) -> Dict[str, Any]:
+    """
+    Evaluates answer sheet using BrainVault Custom UPSC ML Model.
+    Attempts HTTP call to standalone microservice on port 8001, falling back to direct Python invocation.
+    """
+    url = "http://localhost:8001/evaluate"
+    payload = {"extracted_text": extracted_text}
+    
+    try:
+        response = requests.post(url, json=payload, timeout=15)
+        if response.status_code == 200:
+            return response.json()
+    except Exception:
+        pass
+
+    # Direct local Python invocation fallback if microservice on 8001 is not running
+    try:
+        import sys
+        import os
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+            
+        from ml_service.app import evaluate_answer, EvaluationRequest, load_model
+        load_model()
+        return evaluate_answer(EvaluationRequest(extracted_text=extracted_text))
+    except Exception as e:
+        return {"error": f"Failed to run custom ML model: {str(e)}"}
+
+
 def evaluate_with_gemini(extracted_text: str, api_key: str, model_name: str = "gemini-2.0-flash") -> Dict[str, Any]:
     clean_model = model_name.replace("models/", "").strip() if model_name else "gemini-2.0-flash"
     
@@ -154,10 +184,13 @@ def parse_json_result(text: str) -> Dict[str, Any]:
 
 
 def evaluate_llm_answer(extracted_text: str, provider: str, api_key: str, model_name: str) -> Dict[str, Any]:
-    if not api_key:
-        return {"error": "API Key is required to run LLM evaluation."}
+    provider_clean = (provider or "custom_ml").lower().strip()
+    
+    if provider_clean in ("custom_ml", "local"):
+        return evaluate_with_custom_ml(extracted_text)
         
-    provider_clean = provider.lower().strip()
+    if not api_key:
+        return {"error": "API Key is required to run external LLM evaluation."}
     
     if provider_clean == "gemini":
         return evaluate_with_gemini(extracted_text, api_key, model_name or "gemini-2.0-flash")
