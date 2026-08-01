@@ -3,17 +3,37 @@ import close from "../../assests/icons/cross-circle.svg";
 import FileUploader from "../reusableComponents/FileUploader";
 import FilePreview from "../reusableComponents/FilePreview";
 import useCreateNote from "../../hooks/useCreateNote";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addSingleNote } from "../../utils/store/notesSlice";
 
+function flattenSubjectTree(nodes, level = 0, result = []) {
+  if (!nodes || !Array.isArray(nodes)) return result;
+  for (const node of nodes) {
+    const indent = "— ".repeat(level);
+    result.push({
+      id: node.id,
+      name: `${indent}${node.name}`,
+    });
+    if (node.children && node.children.length > 0) {
+      flattenSubjectTree(node.children, level + 1, result);
+    }
+  }
+  return result;
+}
+
 const Modal = ({ heading, setIsModalOpen }) => {
+  const dispatch = useDispatch();
+  const { subjectTopicsTree, selectedSubjectTopic } = useSelector((store) => store.notes);
+
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedTopicId, setSelectedTopicId] = useState(selectedSubjectTopic?.id || "");
   const [validationError, setValidationError] = useState("");
 
-  const dispatch = useDispatch();
   const topic = useRef(null);
   const description = useRef(null);
   const { addNote, error: apiError } = useCreateNote();
+
+  const options = flattenSubjectTree(subjectTopicsTree);
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -33,6 +53,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
     const payload = {
       name: nameVal,
       description: description.current.value.trim() || "",
+      subjectTopicId: selectedTopicId ? parseInt(selectedTopicId) : null,
       fileUrl: selectedFile?.url || null,
       fileType: selectedFile?.type || null,
       fileName: selectedFile?.name || null,
@@ -45,6 +66,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
         id: createdBackendNote?.id || Date.now(),
         name: createdBackendNote?.name || payload.name,
         description: createdBackendNote?.description || payload.description,
+        subjectTopicId: createdBackendNote?.subjectTopicId || payload.subjectTopicId,
         file: selectedFile?.file || null,
         fileUrl: createdBackendNote?.fileUrl || payload.fileUrl,
         fileType: createdBackendNote?.fileType || payload.fileType,
@@ -114,6 +136,24 @@ const Modal = ({ heading, setIsModalOpen }) => {
                 {validationError}
               </p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Select Subject / Topic <span className="text-slate-500 font-normal">(Optional)</span>
+            </label>
+            <select
+              value={selectedTopicId}
+              onChange={(e) => setSelectedTopicId(e.target.value)}
+              className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              <option value="">📂 General Note (No Subject)</option>
+              {options.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

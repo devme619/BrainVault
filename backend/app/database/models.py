@@ -31,7 +31,8 @@ class SubjectTopic(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="subject_topics")
-    children = relationship("SubjectTopic", backref="parent", cascade="all, delete-orphan", remote_side=[id])
+    parent = relationship("SubjectTopic", remote_side=[id], back_populates="children")
+    children = relationship("SubjectTopic", back_populates="parent", cascade="all, delete-orphan")
     notes = relationship("Notes", back_populates="subject_topic", cascade="all, delete-orphan")
 
 
