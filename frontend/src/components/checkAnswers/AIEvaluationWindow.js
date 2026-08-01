@@ -4,7 +4,9 @@ import { triggerAIEvaluation, setActiveTab } from "../../utils/store/checkAnswer
 
 const PROVIDER_MODELS = {
   gemini: [
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Recommended Free)" },
+    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Recommended Fast)" },
+    { id: "gemini-1.5-flash-latest", name: "Gemini 1.5 Flash Latest" },
+    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
     { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
   ],
   grok: [
@@ -25,7 +27,7 @@ const AIEvaluationWindow = ({ selectedFile }) => {
   );
 
   const [provider, setProvider] = useState(localStorage.getItem("bv_ai_provider") || "gemini");
-  const [modelName, setModelName] = useState(localStorage.getItem("bv_ai_model") || "gemini-1.5-flash");
+  const [modelName, setModelName] = useState(localStorage.getItem("bv_ai_model") || "gemini-2.0-flash");
   const [apiKey, setApiKey] = useState(localStorage.getItem("bv_ai_key") || "");
   const [showKey, setShowKey] = useState(false);
   const [showSettings, setShowSettings] = useState(!localStorage.getItem("bv_ai_key"));
