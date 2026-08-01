@@ -1,17 +1,8 @@
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-
-function getAuthHeaders() {
-  const token = localStorage.getItem("bv_token") || localStorage.getItem("token");
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
+import { API_BASE_URL, getAuthHeaders } from "../config/apiConfig";
 
 export async function getSubjectTopicsTree() {
   try {
-    const response = await fetch(`${BASE_URL}/subject-topics/`, {
+    const response = await fetch(`${API_BASE_URL}/subject-topics/`, {
       method: "GET",
       headers: getAuthHeaders(),
     });
@@ -30,7 +21,7 @@ export async function getSubjectTopicsTree() {
 
 export async function createSubjectTopic(payload) {
   try {
-    const response = await fetch(`${BASE_URL}/subject-topics/`, {
+    const response = await fetch(`${API_BASE_URL}/subject-topics/`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -49,7 +40,7 @@ export async function createSubjectTopic(payload) {
 
 export async function updateSubjectTopic(id, name) {
   try {
-    const response = await fetch(`${BASE_URL}/subject-topics/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/subject-topics/${id}`, {
       method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify({ name }),
@@ -68,7 +59,7 @@ export async function updateSubjectTopic(id, name) {
 
 export async function deleteSubjectTopic(id) {
   try {
-    const response = await fetch(`${BASE_URL}/subject-topics/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/subject-topics/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });

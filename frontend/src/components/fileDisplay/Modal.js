@@ -5,6 +5,7 @@ import FilePreview from "../reusableComponents/FilePreview";
 import useCreateNote from "../../hooks/useCreateNote";
 import { useDispatch, useSelector } from "react-redux";
 import { addSingleNote } from "../../utils/store/notesSlice";
+import { uploadNoteFileToCloud } from "../../apis/notesAPI";
 
 function flattenSubjectTree(nodes, level = 0, result = []) {
   if (!nodes || !Array.isArray(nodes)) return result;
@@ -28,6 +29,7 @@ const Modal = ({ heading, setIsModalOpen }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedTopicId, setSelectedTopicId] = useState(selectedSubjectTopic?.id || "");
   const [validationError, setValidationError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const topic = useRef(null);
   const description = useRef(null);
@@ -49,17 +51,36 @@ const Modal = ({ heading, setIsModalOpen }) => {
       return;
     }
     setValidationError("");
+    setIsUploading(true);
 
-    const payload = {
-      name: nameVal,
-      description: description.current.value.trim() || "",
-      subjectTopicId: selectedTopicId ? parseInt(selectedTopicId) : null,
-      fileUrl: selectedFile?.url || null,
-      fileType: selectedFile?.type || null,
-      fileName: selectedFile?.name || null,
-    };
+    let finalFileUrl = selectedFile?.url || null;
+    let finalFileType = selectedFile?.type || null;
+    let finalFileName = selectedFile?.name || null;
 
     try {
+      // Upload file attachment to Cloudflare R2 / AWS S3 cloud storage
+      if (selectedFile?.file) {
+        try {
+          const cloudRes = await uploadNoteFileToCloud(selectedFile.file);
+          if (cloudRes?.file_url) {
+            finalFileUrl = cloudRes.file_url;
+            finalFileType = cloudRes.file_type || selectedFile.type;
+            finalFileName = cloudRes.file_name || selectedFile.name;
+          }
+        } catch (uploadErr) {
+          console.warn("Cloud upload warning, proceeding with local payload:", uploadErr);
+        }
+      }
+
+      const payload = {
+        name: nameVal,
+        description: description.current.value.trim() || "",
+        subjectTopicId: selectedTopicId ? parseInt(selectedTopicId) : null,
+        fileUrl: finalFileUrl,
+        fileType: finalFileType,
+        fileName: finalFileName,
+      };
+
       const createdBackendNote = await addNote(payload).catch(() => null);
 
       const noteToStore = {
@@ -79,6 +100,8 @@ const Modal = ({ heading, setIsModalOpen }) => {
       setIsModalOpen(false);
     } catch (err) {
       console.error("Failed to create note:", err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -98,56 +121,61 @@ const Modal = ({ heading, setIsModalOpen }) => {
   };
 
   return (
-    <div>
-      <div
-        className="fixed inset-0 z-20 w-full h-full bg-black/70 backdrop-blur-xs"
-        onClick={closeModal}
-      />
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        className="fixed inset-0 z-30 w-11/12 max-w-md h-fit mx-auto my-auto rounded-xl bg-slate-900 border border-slate-800 text-white shadow-2xl overflow-hidden animate-fade-in"
-      >
-        <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-950/50">
-          <h1 className="font-bold text-lg text-slate-100">{heading}</h1>
-          <img
-            alt="close"
-            src={close}
-            className="w-6 h-6 cursor-pointer opacity-70 hover:opacity-100 transition"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 font-sans animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+          <div>
+            <h3 className="text-lg font-bold text-slate-100">{heading}</h3>
+            <p className="text-xs text-slate-400">Save structured study material & cloud documents</p>
+          </div>
+          <button
             onClick={closeModal}
-          />
+            className="text-slate-400 hover:text-white transition p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+          >
+            <img src={close} alt="close" className="w-5 h-5 filter invert opacity-75 hover:opacity-100" />
+          </button>
         </div>
 
-        <div className="p-4 flex flex-col gap-4">
+        {/* Content Body */}
+        <form onSubmit={handleOnClick} className="p-6 overflow-y-auto space-y-4 text-xs text-slate-300">
+          {validationError && (
+            <div className="p-3 bg-red-950/60 border border-red-800/80 text-red-300 rounded-xl text-xs font-semibold">
+              ⚠️ {validationError}
+            </div>
+          )}
+
+          {apiError && (
+            <div className="p-3 bg-red-950/60 border border-red-800/80 text-red-300 rounded-xl text-xs font-semibold">
+              ⚠️ {apiError}
+            </div>
+          )}
+
+          {/* Note Name Field */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Note Name <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold text-slate-200 mb-1">
+              Note Name / Title <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
-              placeholder="e.g. UPSC General Studies Notes"
               ref={topic}
-              onChange={() => setValidationError("")}
-              className={`w-full p-2.5 rounded-lg bg-slate-950 border ${
-                validationError ? "border-red-500" : "border-slate-700"
-              } text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500`}
+              placeholder="e.g. GS2 Constitutional Framework & 73rd Amendment"
+              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+              required
             />
-            {validationError && (
-              <p className="text-xs text-red-400 mt-1 font-medium">
-                {validationError}
-              </p>
-            )}
           </div>
 
+          {/* Subject / Topic Category Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Select Subject / Topic <span className="text-slate-500 font-normal">(Optional)</span>
+            <label className="block text-xs font-semibold text-slate-200 mb-1">
+              Link to Subject / Sub-Topic (Optional)
             </label>
             <select
               value={selectedTopicId}
               onChange={(e) => setSelectedTopicId(e.target.value)}
-              className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-emerald-500 cursor-pointer"
+              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer"
             >
-              <option value="">📂 General Note (No Subject)</option>
+              <option value="">-- General Notes (No Subject Tag) --</option>
               {options.map((opt) => (
                 <option key={opt.id} value={opt.id}>
                   {opt.name}
@@ -156,71 +184,80 @@ const Modal = ({ heading, setIsModalOpen }) => {
             </select>
           </div>
 
+          {/* Description Field */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Description{" "}
-              <span className="text-slate-500 font-normal">(Optional)</span>
+            <label className="block text-xs font-semibold text-slate-200 mb-1">
+              Short Description / Summary
             </label>
             <textarea
-              placeholder="Summary or key points..."
               ref={description}
               rows={3}
-              className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 resize-none"
+              placeholder="Key notes summary, exam relevance, or mentor hints..."
+              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition resize-none"
             />
           </div>
 
+          {/* File Upload Area */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Attach File <span className="text-slate-500 font-normal">(Optional)</span>
+            <label className="block text-xs font-semibold text-slate-200 mb-1">
+              Attach Study Document (PDF / Image) - <span className="text-emerald-400">Cloud Storage S3</span>
             </label>
-            <div className="flex items-center gap-3">
-              <FileUploader
-                onFileSelect={handleFileUpload}
-                buttonText={selectedFile ? "Change File" : "Choose File"}
-                className="shrink-0"
-              />
-              {selectedFile && (
-                <span className="text-xs text-slate-300 truncate font-mono">
-                  📄 {selectedFile.name} ({selectedFile.size} MB)
-                </span>
-              )}
-            </div>
 
-            {selectedFile && (
-              <div className="mt-3 w-full h-32">
-                <FilePreview
-                  fileUrl={selectedFile.url}
-                  fileType={selectedFile.type}
-                  fileName={selectedFile.name}
-                  className="w-full h-full"
-                />
+            {!selectedFile ? (
+              <FileUploader onFileUpload={handleFileUpload} />
+            ) : (
+              <div className="relative rounded-xl border border-slate-800 overflow-hidden bg-slate-950 p-2">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 px-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-400 font-bold text-xs">✓ Attached:</span>
+                    <span className="font-mono text-slate-200 truncate max-w-xs">{selectedFile.name}</span>
+                    <span className="text-slate-500 text-[10px]">({selectedFile.size} MB)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-0.5 rounded bg-red-950/60 border border-red-900 cursor-pointer"
+                  >
+                    Remove File
+                  </button>
+                </div>
+                <div className="w-full h-44 rounded-lg overflow-hidden">
+                  <FilePreview
+                    fileUrl={selectedFile.url}
+                    fileType={selectedFile.type}
+                    fileName={selectedFile.name}
+                  />
+                </div>
               </div>
             )}
           </div>
 
-          {apiError && (
-            <p className="text-xs text-red-400 bg-red-950/40 p-2 rounded border border-red-900">
-              {apiError}
-            </p>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          {/* Action Footer Buttons */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80">
             <button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white transition rounded-lg cursor-pointer"
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition cursor-pointer"
             >
               Cancel
             </button>
             <button
-              onClick={handleOnClick}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-lg transition shadow-md cursor-pointer"
+              type="submit"
+              disabled={isUploading}
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-emerald-950/50 cursor-pointer flex items-center gap-2"
             >
-              Upload Note
+              {isUploading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Uploading to Cloud Storage...</span>
+                </>
+              ) : (
+                <span>Save Note to Cloud Storage ☁️</span>
+              )}
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

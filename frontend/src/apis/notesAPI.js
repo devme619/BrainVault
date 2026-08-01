@@ -1,12 +1,32 @@
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+import { API_BASE_URL, getAuthHeaders } from "../config/apiConfig";
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("bv_token") || localStorage.getItem("token");
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+export async function uploadNoteFileToCloud(fileObj) {
+  try {
+    const formData = new FormData();
+    formData.append("file", fileObj);
+
+    const token = localStorage.getItem("bv_token") || localStorage.getItem("token");
+    const headers = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/s3/upload`, {
+      method: "POST",
+      headers: headers,
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Failed to upload file to cloud storage");
+    }
+
+    return data; // Returns { file_url, file_name, file_type, storage_provider }
+  } catch (err) {
+    console.error("Error uploading file to cloud storage:", err);
+    throw err;
   }
-  return headers;
 }
 
 export async function createNote(payload) {
@@ -22,7 +42,7 @@ export async function createNote(payload) {
       text_content: payload.textContent || payload.text_content || null,
     };
 
-    const response = await fetch(`${BASE_URL}/notes/`, {
+    const response = await fetch(`${API_BASE_URL}/notes/`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(backendPayload),
@@ -54,7 +74,7 @@ export async function updateNoteApi(noteId, payload) {
       text_content: payload.textContent || payload.text_content || null,
     };
 
-    const response = await fetch(`${BASE_URL}/notes/${noteId}`, {
+    const response = await fetch(`${API_BASE_URL}/notes/${noteId}`, {
       method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(backendPayload),
@@ -73,7 +93,7 @@ export async function updateNoteApi(noteId, payload) {
 
 export async function getNotes(subjectTopicId = null) {
   try {
-    let url = `${BASE_URL}/notes/`;
+    let url = `${API_BASE_URL}/notes/`;
     if (subjectTopicId) {
       url += `?subject_topic_id=${subjectTopicId}`;
     }

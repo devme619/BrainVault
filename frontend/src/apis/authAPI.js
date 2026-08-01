@@ -1,7 +1,7 @@
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+import { API_BASE_URL } from "../config/apiConfig";
 
 export async function signupUser(payload) {
-  const response = await fetch(`${BASE_URL}/auth/signup`, {
+  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -17,7 +17,7 @@ export async function signupUser(payload) {
 }
 
 export async function loginUser(payload) {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -33,7 +33,7 @@ export async function loginUser(payload) {
 }
 
 export async function googleAuthUser(payload) {
-  const response = await fetch(`${BASE_URL}/auth/google`, {
+  const response = await fetch(`${API_BASE_URL}/auth/google`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -49,7 +49,7 @@ export async function googleAuthUser(payload) {
 }
 
 export async function getCurrentUser(token) {
-  const response = await fetch(`${BASE_URL}/auth/me`, {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
