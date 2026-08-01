@@ -1,7 +1,7 @@
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function getAuthHeaders() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("bv_token") || localStorage.getItem("token");
   const headers = { "Content-Type": "application/json" };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;

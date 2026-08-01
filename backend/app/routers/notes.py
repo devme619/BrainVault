@@ -33,7 +33,10 @@ def get_notes(
         return []
 
     try:
-        query = db.query(models.Notes).filter(models.Notes.user_id == current_user.id)
+        # Include notes belonging to current user or legacy unassigned notes
+        query = db.query(models.Notes).filter(
+            (models.Notes.user_id == current_user.id) | (models.Notes.user_id.is_(None))
+        )
         
         if subject_topic_id is not None:
             all_ids = get_all_subtopic_ids(db, subject_topic_id, current_user.id)
@@ -97,12 +100,17 @@ def update_note(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    note = db.query(models.Notes).filter(models.Notes.id == note_id, models.Notes.user_id == current_user.id).first()
+    note = db.query(models.Notes).filter(
+        models.Notes.id == note_id,
+        (models.Notes.user_id == current_user.id) | (models.Notes.user_id.is_(None))
+    ).first()
+
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
 
     note.name = note_data.name
     note.description = note_data.description
+    note.user_id = current_user.id # Claim note for user on edit
     if note_data.subject_topic_id is not None:
         note.subject_topic_id = note_data.subject_topic_id
     if note_data.text_content is not None:

@@ -6,8 +6,7 @@ const PROVIDER_MODELS = {
   gemini: [
     { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Recommended Fast)" },
     { id: "gemini-1.5-flash-latest", name: "Gemini 1.5 Flash Latest" },
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+    { id: "gemini-1.5-pro-latest", name: "Gemini 1.5 Pro Latest" },
   ],
   grok: [
     { id: "grok-beta", name: "xAI Grok Beta" },
