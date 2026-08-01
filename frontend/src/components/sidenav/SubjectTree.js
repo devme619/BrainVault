@@ -11,7 +11,55 @@ import {
   deleteSubjectTopic,
 } from "../../apis/subjectTopicsAPI";
 
+// Helper to insert a child into a tree recursively
+function insertChildInTree(tree, parentId, newChild) {
+  return tree.map((node) => {
+    if (node.id === parentId) {
+      return {
+        ...node,
+        children: [...(node.children || []), newChild],
+      };
+    }
+    if (node.children && node.children.length > 0) {
+      return {
+        ...node,
+        children: insertChildInTree(node.children, parentId, newChild),
+      };
+    }
+    return node;
+  });
+}
+
+// Helper to update a node name in tree recursively
+function updateNodeInTree(tree, nodeId, newName) {
+  return tree.map((node) => {
+    if (node.id === nodeId) {
+      return { ...node, name: newName };
+    }
+    if (node.children && node.children.length > 0) {
+      return {
+        ...node,
+        children: updateNodeInTree(node.children, nodeId, newName),
+      };
+    }
+    return node;
+  });
+}
+
+// Helper to remove a node from tree recursively
+function removeNodeFromTree(tree, nodeId) {
+  return tree
+    .filter((node) => node.id !== nodeId)
+    .map((node) => ({
+      ...node,
+      children: node.children ? removeNodeFromTree(node.children, nodeId) : [],
+    }));
+}
+
 const TreeNode = ({ node, level = 0, onSelect, selectedId, onRefresh }) => {
+  const dispatch = useDispatch();
+  const { subjectTopicsTree } = useSelector((store) => store.notes);
+
   const [isOpen, setIsOpen] = useState(true);
   const [isAddingChild, setIsAddingChild] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -24,29 +72,58 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onRefresh }) => {
   const handleAddChild = async (e) => {
     e.preventDefault();
     if (!childName.trim()) return;
+    const name = childName.trim();
+    setChildName("");
+    setIsAddingChild(false);
+    setIsOpen(true);
+
     try {
-      await createSubjectTopic({
-        name: childName.trim(),
+      const res = await createSubjectTopic({
+        name,
         parent_id: node.id,
       });
-      setChildName("");
-      setIsAddingChild(false);
-      setIsOpen(true);
+
+      const newChildNode = {
+        id: res?.id || Date.now(),
+        user_id: res?.user_id || 1,
+        parent_id: node.id,
+        name: res?.name || name,
+        created_at: new Date().toISOString(),
+        children: [],
+      };
+
+      const updatedTree = insertChildInTree(subjectTopicsTree, node.id, newChildNode);
+      dispatch(setSubjectTopicsTree(updatedTree));
       onRefresh();
     } catch (err) {
       console.error("Failed to add subtopic:", err);
+      // Fallback local update for guest mode
+      const localChild = {
+        id: Date.now(),
+        parent_id: node.id,
+        name,
+        children: [],
+      };
+      const updatedTree = insertChildInTree(subjectTopicsTree, node.id, localChild);
+      dispatch(setSubjectTopicsTree(updatedTree));
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editName.trim()) return;
+    const name = editName.trim();
+    setIsEditing(false);
+
     try {
-      await updateSubjectTopic(node.id, editName.trim());
-      setIsEditing(false);
+      await updateSubjectTopic(node.id, name);
+      const updatedTree = updateNodeInTree(subjectTopicsTree, node.id, name);
+      dispatch(setSubjectTopicsTree(updatedTree));
       onRefresh();
     } catch (err) {
       console.error("Failed to rename subject/topic:", err);
+      const updatedTree = updateNodeInTree(subjectTopicsTree, node.id, name);
+      dispatch(setSubjectTopicsTree(updatedTree));
     }
   };
 
@@ -58,9 +135,13 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onRefresh }) => {
         if (isSelected) {
           onSelect(null);
         }
+        const updatedTree = removeNodeFromTree(subjectTopicsTree, node.id);
+        dispatch(setSubjectTopicsTree(updatedTree));
         onRefresh();
       } catch (err) {
         console.error("Failed to delete subject/topic:", err);
+        const updatedTree = removeNodeFromTree(subjectTopicsTree, node.id);
+        dispatch(setSubjectTopicsTree(updatedTree));
       }
     }
   };
@@ -160,14 +241,14 @@ const TreeNode = ({ node, level = 0, onSelect, selectedId, onRefresh }) => {
           />
           <button
             type="submit"
-            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold"
+            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold cursor-pointer"
           >
             Add
           </button>
           <button
             type="button"
             onClick={() => setIsAddingChild(false)}
-            className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px]"
+            className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px] cursor-pointer"
           >
             ✕
           </button>
@@ -205,7 +286,9 @@ const SubjectTree = () => {
   const refreshTree = async () => {
     try {
       const treeData = await getSubjectTopicsTree();
-      dispatch(setSubjectTopicsTree(treeData));
+      if (Array.isArray(treeData) && treeData.length > 0) {
+        dispatch(setSubjectTopicsTree(treeData));
+      }
     } catch (err) {
       console.error("Failed to load subject topics tree:", err);
     }
@@ -218,16 +301,39 @@ const SubjectTree = () => {
   const handleAddRoot = async (e) => {
     e.preventDefault();
     if (!rootName.trim()) return;
+    const name = rootName.trim();
+    setRootName("");
+    setIsAddingRoot(false);
+
     try {
-      await createSubjectTopic({
-        name: rootName.trim(),
+      const res = await createSubjectTopic({
+        name,
         parent_id: null,
       });
-      setRootName("");
-      setIsAddingRoot(false);
+
+      const newRootNode = {
+        id: res?.id || Date.now(),
+        user_id: res?.user_id || 1,
+        parent_id: null,
+        name: res?.name || name,
+        created_at: new Date().toISOString(),
+        children: [],
+      };
+
+      const updatedTree = [...(subjectTopicsTree || []), newRootNode];
+      dispatch(setSubjectTopicsTree(updatedTree));
       refreshTree();
     } catch (err) {
-      console.error("Failed to create root subject:", err);
+      console.error("Failed to create root subject on backend:", err);
+      // Fallback optimistic creation for Redux state
+      const localRootNode = {
+        id: Date.now(),
+        parent_id: null,
+        name,
+        children: [],
+      };
+      const updatedTree = [...(subjectTopicsTree || []), localRootNode];
+      dispatch(setSubjectTopicsTree(updatedTree));
     }
   };
 
@@ -260,14 +366,14 @@ const SubjectTree = () => {
           />
           <button
             type="submit"
-            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold"
+            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold cursor-pointer"
           >
             Save
           </button>
           <button
             type="button"
             onClick={() => setIsAddingRoot(false)}
-            className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px]"
+            className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px] cursor-pointer"
           >
             ✕
           </button>
